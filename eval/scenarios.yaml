@@ -74,7 +74,7 @@
     - Vocês têm o violão Giannini GF-3D?
   tools: [search_products|get_product_details]
   includes: ["esgotad|indisponível|sem estoque|fora de estoque|não está disponível"]
-  excludes: ["não temos o modelo", "não temos esse modelo"]
+  excludes: ["não vend", "não trabalha", "não comercializ"]
 
 - id: last_units_no_reservation
   purpose: Discontinued product with stock; last units, no reservation (D-005, rule 10).
@@ -110,7 +110,7 @@
   turns:
     - Vocês têm saxofone?
   tools: [search_products]
-  includes: ["não temos|não trabalhamos|não há|não possuímos|não vendemos"]
+  includes: ["não tem|não trabalha|não há|não possu|não vend|não encontr"]
   excludes: ["em breve", "flauta", "clarinete", "vai chegar"]
 
 - id: active_promotion

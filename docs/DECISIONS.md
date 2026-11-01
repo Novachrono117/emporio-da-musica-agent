@@ -331,6 +331,16 @@ Each decision with its context, the options considered, the choice and the reaso
      written.
   3. A refusal written "a gente não trabalha com..." was rejected; refusals now match on stems ("não vend",
      "não trabalha").
+- **Changed after every run (2026-11-01, approved by Vinicius):** reading the failures of the last runs showed two more
+  expectations that rejected right answers. Every stored answer was regraded again; three scenario runs changed, all
+  from fail to pass, and no verdict changed.
+  1. `empty_category` (no saxophones) accepted only a closed list of refusals and rejected "a gente não tem
+     saxofone" (Flash-Lite) and "não encontramos nenhum modelo de saxofone em nosso catálogo" (Qwen 3.5 9B). It now
+     matches stems, as the accessory refusals do; answers that say the store has saxophones still fail.
+  2. `out_of_stock_alternatives` excluded "não temos esse modelo" to catch an answer that the store does not sell an
+     out-of-stock guitar, and so rejected "não temos esse modelo exato disponível no momento... está esgotado
+     temporariamente" (Flash-Lite). It now excludes what that wrong answer would say ("não vend", "não trabalha",
+     "não comercializ"); the answer must still say the product is out of stock.
 - **Local models:** Qwen 3.5 runs with its default thinking mode on (Ollama's default for the model), on an Ollama
   server with an 8,192-token context (`OLLAMA_CONTEXT_LENGTH=8192`). The first Qwen 3.5 4B runs used Ollama's default
   of 4,096 tokens on GPUs under 24 GB: with thinking, input plus output reached exactly 4,096 tokens in some calls, so
