@@ -100,6 +100,8 @@ def test_the_prompt_puts_tools_first_and_carries_the_rules_only_the_model_can_fo
     for rule in (
         "assistente virtual",
         "ANTES de responder",
+        "não vende acessórios",
+        "diga que não tem essa informação",
         "nunca invente",
         "QUAL FERRAMENTA USAR",
         "Português do Brasil",
