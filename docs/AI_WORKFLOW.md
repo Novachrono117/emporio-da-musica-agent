@@ -68,3 +68,27 @@ trailer.
   descriptions rather than keep them with a warning (D-007).
 - **Caught before running:** two phone endings in the first draft of the order tests were wrong; they were corrected
   against the CSV.
+
+## Phase 3: agent
+
+- **Asked:** the LLM interface, an adapter for Claude and one for Gemini and Ollama, the tool-calling loop, saved
+  sessions and the CLI; done when the loop passes tests with a scripted LLM and a real conversation runs on the local
+  model.
+- **Produced by Claude Code:**
+  - a plan with five open points (D-008), after reading the current Anthropic docs: Claude Haiku 5.5 thinks
+    adaptively by default and its thinking blocks must go back unchanged with the tool results; prompt caching is a
+    prefix match, so the system prompt carries the store date but not the time of day;
+  - the interface and both adapters, tested against real SDK response objects without network calls; the loop with
+    its fixed answer at the tool cap; sessions that keep the tools' state; a usage log without conversation text; the
+    product id guard; the CLI (`python -m emporio`); 189 tests;
+  - real conversations with the same three questions (a price, installments, order 8 with its phone ending) on
+    Qwen 2.5 7B through Ollama and on Gemini Flash-Lite. Both called the right tools with the right arguments, and
+    Gemini's second turn replayed its thought signatures.
+- **Reviewed or changed by Vinicius:** read the plan and approved it, including the product id guard proposed after
+  the phase 2 schema check.
+- **Found while building:** the current SDKs depend on `httpx2`, not `httpx` (a test that built SDK errors was
+  adjusted); new sessions were named after the simulated store date, and now use the real clock.
+- **For phase 4, from the real conversations:** Qwen offered a shopping cart the store does not have, wrote an
+  English word in a Portuguese answer and sent the customer to the carrier about a late delivery instead of offering
+  a person; Gemini offered a person, but used Markdown bold, which a terminal or WhatsApp shows as asterisks, and
+  offered to place the order, which the agent cannot do.
