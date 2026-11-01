@@ -25,6 +25,9 @@ class InMemoryStore:
     def get_product(self, product_id: int) -> Product | None:
         return self._products.get(product_id)
 
+    def list_products(self) -> Sequence[Product]:
+        return tuple(self._products.values())
+
     def get_category(self, category_id: int) -> Category | None:
         return self._categories.get(category_id)
 

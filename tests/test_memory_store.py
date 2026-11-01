@@ -23,6 +23,7 @@ def test_lookups_by_id(store):
     assert store.get_customer(1).phone_last4 == "3456"
     assert store.get_order(8).tracking_code == "BRJL5544332BR"
     assert len(store.list_categories()) == 9
+    assert len(store.list_products()) == 65
 
 
 def test_unknown_ids_return_none(store):
