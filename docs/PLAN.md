@@ -123,9 +123,12 @@ src/emporio/
   agent/loop.py            tool-calling loop with a step cap
   agent/memory.py          session store
   agent/usage.py           usage log (tokens, latency, tools; no conversation text)
+  agent/guards.py          amount check: no price in an answer that no tool returned (D-009)
   cli.py, __main__.py      entry point: python -m emporio
 eval/
-  golden_set.yaml          cases, expected tools, expected facts, forbidden content
+  scenarios.yaml           test conversations (phase 4); phase 5 adds expected tools, facts and forbidden content
+  run_scenarios.py         runs the scenarios on a provider and writes a transcript (phase 4)
+  transcripts/             transcripts read by hand
   run_eval.py              runs a model on the set, throttled and cached, writes JSONL
   results/                 raw runs (JSONL) and summaries
 scripts/
@@ -249,7 +252,7 @@ cached) and latency per call to JSONL, and writes `docs/EVAL.md`.
 | **1. Data** | loader, cleaning, policy sections, `DATA_NOTES.md` | tests for loading and integrity pass | laptop | Sun Nov 1 morning |
 | **2. Tools** | the eight tools and their schemas (D-006) | unit tests for every rule in section 7 | laptop | Sun Nov 1 afternoon |
 | **3. Agent** | LLM interface, two adapters, loop, CLI | loop test with a fake LLM; a real conversation on the local model | laptop | Sun Nov 1 night |
-| **4. Behaviour** | persona, guardrails, out-of-scope, memory | manual run of the brief's four example questions | laptop | Mon Nov 2 morning |
+| **4. Behaviour** | persona, guardrails, out-of-scope, memory (D-009) | the brief's four example questions and the other scenarios in `eval/scenarios.yaml`, read by hand on two models | laptop | Mon Nov 2 morning |
 | **5. Evaluation** | golden set, runner, runs on all candidates | `docs/EVAL.md` with the table; default model chosen by the rule | desktop (local runs) and laptop (APIs) in parallel | Mon Nov 2 afternoon |
 | **6. Examples and costs** | 3 to 5 conversations, cost report | `examples/` and `docs/COSTS.md` | laptop | Mon Nov 2 night |
 | **7. Delivery** | README, clean clone on the desktop, repository public, submission | checklist in section 14 complete | both | Tue Nov 3, before 11:59 pm |

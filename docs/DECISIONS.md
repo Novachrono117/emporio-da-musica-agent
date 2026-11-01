@@ -257,3 +257,28 @@ Each decision with its context, the options considered, the choice and the reaso
   the tools have optional ones; the validator checks their input.
 - **Known limitation:** without API credit, the Claude adapter is tested against recorded SDK objects only, not
   against the live API.
+
+## D-009: Agent behaviour (phase 4)
+
+- **Status:** approved by Vinicius on 2026-11-01, who also asked for more test conversations than the brief's four.
+- **Context:** the real conversations of phase 3 called the right tools, but the answers offered a shopping cart, mixed
+  in an English word, sent a customer to the carrier about a late delivery, used Markdown and offered to place an
+  order. The plan (section 8) lists the rules the system prompt must carry.
+- **Choices:**
+  1. **System prompt in Portuguese**, the customer's language, with an explicit rule to answer only in Portuguese and
+     translate tool results. Tool texts stay in English (D-006); if the evaluation shows English leaking into
+     answers, this is reopened.
+  2. **Fixed greeting printed by the CLI** for a new session, disclosing the virtual assistant (D-005, rule 14) the
+     same way every time. It is not part of the history; the prompt tells the model the customer was already greeted.
+  3. **Format through the prompt only:** plain chat text, no Markdown. Code cleanup is added only if the evaluation
+     shows Markdown persisting.
+  4. **Amount check in code:** every amount in reais in an answer must have appeared in a tool result or in a
+     customer message of the session. Otherwise the model is asked once to correct the answer (the wrong answer is
+     discarded and a reminder is added to that call's system prompt); a second miss gets the fixed answer that offers
+     a person. Invented prices disqualify a model in the evaluation (PLAN, section 9) and bind the store (CDC,
+     art. 30). Amounts written without "R$" are not checked (known limitation).
+  5. **Memory:** nothing new; full history per session since phase 3. Summarising long sessions stays a stretch goal.
+- **Test conversations:** `eval/scenarios.yaml` holds the brief's four questions plus scenarios for every rule above
+  (catalog, promotions, installments, orders and privacy, returns and warranty, hours, scope, prompt injection);
+  `eval/run_scenarios.py` runs them on a provider and writes a transcript to `eval/transcripts/`, read by hand in this
+  phase. Phase 5 adds expectations and grading to the same file.
