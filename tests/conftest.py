@@ -7,6 +7,7 @@ import pytest
 from emporio.config import STORE_TZ
 from emporio.data.memory import InMemoryStore
 from emporio.data.policy import load_policy_manual
+from emporio.llm.base import LLMResponse, ToolCall, Usage
 from emporio.tickets import TicketLog
 from emporio.tools.base import ToolContext
 
@@ -27,3 +28,31 @@ def manual():
 @pytest.fixture
 def ctx(store, manual, tmp_path):
     return ToolContext(store, manual, TicketLog(tmp_path / "tickets.jsonl"), now=lambda: MONDAY_10AM)
+
+
+class ScriptedLLM:
+    """A fake LLMClient that returns prepared responses in order and records what it was sent."""
+
+    provider = "scripted"
+    model = "scripted-1"
+
+    def __init__(self, *responses):
+        self.responses = list(responses)
+        self.calls = []
+
+    def complete(self, system, messages, tools):
+        self.calls.append({"system": system, "messages": [dict(m) for m in messages], "tools": tools})
+        response = self.responses.pop(0)
+        if isinstance(response, Exception):
+            raise response
+        return response
+
+
+def text(answer):
+    return LLMResponse(answer, (), "end", Usage(100, 10), raw={"text": answer})
+
+
+def tools(*calls):
+    """A response asking for tools: tools(("search_products", {"query": "x"}), ...)."""
+    tool_calls = tuple(ToolCall(f"call_{i}", name, args) for i, (name, args) in enumerate(calls))
+    return LLMResponse("", tool_calls, "tool_use", Usage(100, 10, cached_input_tokens=80), raw={"calls": len(calls)})
