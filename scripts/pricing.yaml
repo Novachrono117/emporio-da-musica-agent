@@ -1,0 +1,57 @@
+# Prices for scripts/cost_report.py (DECISIONS.md, D-011). USD per million tokens, paid tier, read on 2026-11-01 from
+# the official pages below. The free tier is left out: Google uses its data to improve its products.
+
+retrieved: "2026-11-01"
+
+exchange_rate:
+  usd_brl: "5.4212"
+  source: Banco Central do Brasil, PTAX selling rate of 2026-10-30, the last business day
+  url: https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/aplicacao#!/recursos/CotacaoDolarPeriodo
+
+volumes_per_day: [30, 100, 300]
+days_per_month: 30
+
+# System prompt plus the eight tool definitions, as Gemini counts them: the first call of three conversations had
+# 2,174 to 2,184 prompt tokens, with a customer message of about 10 to 30 tokens (2026-11-01).
+prefix_tokens: 2150
+
+models:
+  - provider: gemini
+    model: gemini-3.5-flash-lite
+    input: "0.30"
+    output: "2.50"  # thinking included
+    cache_read: "0.03"
+    caching: >-
+      not projected: the prefix of about 2,150 tokens is under the 4,096-token minimum Google documents for implicit
+      caching on other Gemini 3 models, and none is documented for Flash-Lite.
+    source: https://ai.google.dev/gemini-api/docs/pricing (last updated 2026-10-30)
+
+  - provider: gemini
+    model: gemini-3.8-flash
+    input: "0.75"
+    output: "3.75"  # thinking included
+    cache_read: "0.075"
+    caching: not projected, for the same reason as Flash-Lite.
+    note: these prices hold through 2026-12-31; from 2027-01-01 they double (1.50 input, 7.50 output).
+    source: https://ai.google.dev/gemini-api/docs/pricing (last updated 2026-10-30)
+
+  - provider: anthropic
+    model: claude-haiku-5-5
+    input: "0.10"
+    output: "0.50"
+    cache_write: "0.125"  # 5-minute cache
+    cache_read: "0.01"
+    tool_prompt_tokens: 286  # added by the API to every request with tools (tool_choice auto)
+    tokens_from: gemini/gemini-3.5-flash-lite  # not measured: no API credit
+    note: prices for prompts up to 100,000 tokens; the agent's prompts stay under 15,000.
+    source: https://platform.claude.com/docs/en/about-claude/pricing
+
+local:
+  machine: Azure NC4as T4 v3 (1 NVIDIA T4 with 16 GB, 4 vCPU, 28 GB RAM), Linux, Brazil South, pay as you go
+  hourly: "0.894"
+  hours_per_month: 730
+  source: https://prices.azure.com/api/retail/prices (armSkuName Standard_NC4as_T4_v3, brazilsouth, Consumption)
+  models:
+    - ollama/qwen3.5:9b-q4_K_M
+    - ollama/qwen3.5:4b
+    - ollama/qwen2.5:7b-instruct-q4_K_M

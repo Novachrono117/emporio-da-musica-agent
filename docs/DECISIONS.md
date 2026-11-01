@@ -377,3 +377,18 @@ Each decision with its context, the options considered, the choice and the reaso
   6. The local model is not free: a GPU virtual machine's monthly price from a named provider, with its date, and the
      volume at which it breaks even with Flash-Lite. No local model met the bar of D-010.
   7. `scripts/cost_report.py` does the arithmetic in `Decimal` and writes `docs/COSTS.md`; tests cover the arithmetic.
+- **Found while building (2026-11-01):**
+  1. Gemini's OpenAI-compatible endpoint leaves thinking out of `completion_tokens` and counts it only in
+     `total_tokens` (a call with high effort reported 29 completion tokens and 1,151 more in the total); Gemini bills
+     thinking as output. The adapter recorded `completion_tokens`, so it now records the total minus the prompt. The
+     evaluation's output tokens are kept: in 8 later calls of the agent Flash-Lite used no thinking at its default
+     level.
+  2. Gemini prompt caching is not projected: the prefix (about 2,150 tokens) is under the 4,096-token minimum Google
+     documents for implicit caching on other Gemini 3 models, none is documented for Flash-Lite, and the free tier
+     has no caching. Claude Haiku 5.5's minimum is 512 tokens, and the adapter already turns caching on, so only
+     Claude gets the column.
+  3. There is no Anthropic key in `.env`, so Claude's tokens are Flash-Lite's plus the 286-token tool-use system
+     prompt Anthropic documents for every request with tools.
+  4. Gemini 3.8 Flash finished 2 conversations, too few to project; the report lists its tokens and prices only.
+  5. The GPU machine is Azure's NC4as T4 v3 in Brazil South, priced through Azure's public retail prices API:
+     Google Cloud's pricing pages could not be read without a browser. Brazil South keeps the data in the country.
