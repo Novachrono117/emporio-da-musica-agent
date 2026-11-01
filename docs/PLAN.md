@@ -287,12 +287,12 @@ finished scenarios, logs tokens (input, output, cached) and latency per call, wr
 ## 14. Delivery checklist
 
 - [ ] Repository public; commit history spread over the days
-- [ ] README: setup per provider, decisions, limitations, "with more time", coding assistant usage
-- [ ] 3 to 5 example conversations, at least one non-trivial
-- [ ] `pytest` green; evaluation table and chosen default model in the README
-- [ ] `docs/COSTS.md` generated
-- [ ] Clean clone on the desktop ran from the README alone
-- [ ] No secrets in history
+- [x] README: setup per provider, decisions, limitations, "with more time", coding assistant usage
+- [x] 3 to 5 example conversations, at least one non-trivial
+- [x] `pytest` green; evaluation table and chosen default model in the README
+- [x] `docs/COSTS.md` generated
+- [x] Clean clone on the desktop ran from the README alone
+- [x] No secrets in history
 - [ ] Repository link submitted as the selection process asks
 - [ ] No changes after delivery
 

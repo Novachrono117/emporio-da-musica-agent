@@ -46,6 +46,9 @@ cp .env.example .env               # Windows PowerShell: Copy-Item .env.example 
 pytest                             # 245 tests, no network
 ```
 
+If `pip install` says the package requires a different Python, the `python` on your PATH is older than 3.12: on
+Windows, create the environment with `py -3.13 -m venv .venv` (or `py -3.12`) instead.
+
 Then fill in `.env` for the provider you will use. Never commit it: it is in `.gitignore`.
 
 ### Gemini (default)
@@ -57,7 +60,8 @@ python -m emporio
 ```
 
 This uses `gemini-3.5-flash-lite` through Gemini's OpenAI-compatible endpoint. The free tier allows 15 requests a
-minute and 500 a day for this model; a conversation takes about three requests. Google may use free-tier prompts to
+minute and 500 a day for this model; a conversation takes about three requests. Free-tier calls usually take a few
+seconds, but at busy hours one call took over a minute in testing. Google may use free-tier prompts to
 improve its products, which is acceptable for this fictional data only: real customer data needs the paid tier
 (see [Assumptions](#assumptions)).
 
