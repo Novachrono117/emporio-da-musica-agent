@@ -51,9 +51,13 @@ Each decision with its context, the options considered, the choice and the reaso
 - **Answer to the key question:** the Gemini free tier accepts tool calling through the OpenAI-compatible endpoint,
   including the second request that sends the tool result back (the assistant message is returned as received, which
   keeps any thought signature).
-- **Gemini model, proposal awaiting approval:** use `gemini-3.5-flash-lite` as the Gemini candidate. `gemini-3.8-flash`
-  worked once, but with 32 s and 102 s per call, and then failed with 503; on the free tier it looks overloaded tonight
-  (two runs only, so this is an observation, not a measurement). Flash-Lite answered in about 1 s without retries.
+- **Gemini models (approved by Vinicius):** both `gemini-3.8-flash` and `gemini-3.5-flash-lite` go into the evaluation
+  as candidates, and the selection rule in the plan (section 9) decides; the smoke test only proves the protocol, not
+  quality. `gemini-3.8-flash` worked once, but with 32 s and 102 s per call, and then failed with 503 (two runs only,
+  so an observation, not a measurement); Flash-Lite answered in about 1 s without retries. Consequences for the eval
+  runner: retry 429/503 with backoff, cache finished cases, and report each model's error rate next to its accuracy.
+  A model that cannot finish the golden set on the free tier is reported as such. Free-tier latency is not a proxy for
+  paid-tier latency, and the README must say so.
 - **Claude:** `python scripts/smoke_test.py claude` is ready to run once there is credit. Until then Claude stays out of
   the quality comparison and appears in the cost projection only (plan, section 9).
 - **Note for phase 2:** Qwen wrote the price as "R$ 1234.56" (English decimal separator), while both Gemini models wrote
