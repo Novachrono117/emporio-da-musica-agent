@@ -58,6 +58,20 @@ Each decision with its context, the options considered, the choice and the reaso
   runner: retry 429/503 with backoff, cache finished cases, and report each model's error rate next to its accuracy.
   A model that cannot finish the golden set on the free tier is reported as such. Free-tier latency is not a proxy for
   paid-tier latency, and the README must say so.
+- **Free-tier limits of this project (Google AI Studio, read on 2026-10-31):**
+
+  | Model | Requests per minute | Input tokens per minute | Requests per day |
+  |---|---:|---:|---:|
+  | `gemini-3.8-flash` | 5 | about 250K | 20 |
+  | `gemini-3.5-flash-lite` | 15 | about 250K | 500 |
+
+  Token limits are not a concern (a request is a few thousand tokens). The binding limits are 5 RPM and **20 RPD** on
+  `gemini-3.8-flash`: a full golden-set run (about 20 cases, 2 to 3 calls each) does not fit in one day, and SDK retries
+  count against the quota. Consequences: development uses Ollama and Flash-Lite only, so 3.8 Flash quota is kept for the
+  evaluation; the runner throttles per model (at least 12 s between calls for 3.8 Flash, 4 s for Flash-Lite) and caps
+  retries. Whether 3.8 Flash runs the full set across days or a fixed subset is decided in phase 5, once the real number
+  of calls per case is known. The 503 seen in the smoke test happened at 3 RPM and about 5 requests that day, so it was
+  not our quota.
 - **Claude:** `python scripts/smoke_test.py claude` is ready to run once there is credit. Until then Claude stays out of
   the quality comparison and appears in the cost projection only (plan, section 9).
 - **Note for phase 2:** Qwen wrote the price as "R$ 1234.56" (English decimal separator), while both Gemini models wrote
