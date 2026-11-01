@@ -98,3 +98,70 @@ Each decision with its context, the options considered, the choice and the reaso
   several processes.
 - **Rejected:** pandas (heavy dependency, no path to a database); SQLAlchemy (dependency and boilerplate for about 200
   rows); a free-form SQL agent (unsafe with customer data, see `PLAN.md`, section 4).
+
+## D-005: Business rules from the data, the manual and the law
+
+- **Status:** approved by Vinicius on 2026-11-01, after each rule was checked against Brazilian consumer law and the
+  providers' terms (sources below). The rules drive the tools (phase 2) and the system prompt (phase 4). Where the
+  "Proposed" lines in `docs/DATA_NOTES.md` differ, this entry wins.
+- **Context:** the manual contradicts itself in places, the data and the manual disagree, and a few manual rules sit in
+  tension with the law. The agent must never state something the store cannot honour: precise information given to a
+  customer binds the store (CDC, arts. 30 and 35). This is also why prices, stock and promotions only ever come from a
+  tool result.
+- **Rules:**
+  1. **Manual text:** read with pypdf's layout mode, page headers and footers dropped, split into its 29 numbered
+     sections. Contradictions are kept as written and resolved by the rules below.
+  2. **Installments:** section 3.1 wins over the summary table in section 3: each installment is at least R$ 50 up to
+     3x, R$ 80 from 4x to 6x and R$ 100 from 7x to 12x, with no interest; combined payment methods only above
+     R$ 2,000. Every quote shows the cash price, the total, "N x R$ X sem juros" and the Pix price (Decreto
+     5.903/2006, art. 3; Lei 13.455/2017). Installments add up to the total exactly; the last one absorbs the cents.
+     The 5% Pix discount never applies to a promotional price (6.2).
+  3. **Contacts:** e-mail `contato@emporiodamusica.com.br` (on the cover; the accented form in 1.2 may be a valid .br
+     domain, but plain ASCII works in every mail client); phone (67) 3341-4444; WhatsApp (67) 3321-4500 (section 7,
+     the section dedicated to the channel wins over the summary table, as in rule 2). Company name, CNPJ and address
+     come from 1.2 (Decreto 7.962/2013, art. 2). The README lists the conflicts.
+  4. **Defects and warranty:** up to 30 days after the purchase, exchange at the store (4.2). After that the agent never
+     denies the warranty and never sends the customer to the manufacturer: store and manufacturer answer jointly for
+     defects (CDC, art. 18), the legal warranty runs 90 days from receipt (8.1; CDC, art. 26) or, for a hidden defect,
+     from when it shows up (art. 26, §3), and the manufacturer's warranty adds to it (8.2; art. 50). The agent explains
+     this and hands off to a human; the store can intermediate (4.2). The README records the tension between 4.2 and
+     the CDC.
+  5. **Regret (4.1):** only for purchases made outside the store (online, phone), within 7 calendar days of receipt
+     (CDC, art. 49). The agent asks how and when the customer received the product instead of inferring it, records
+     the request and confirms receipt at once (Decreto 7.962/2013, art. 5). In-store purchases have no regret right but
+     do have the 7-day preference exchange (4.3). The manual refunds within 10 business days while the law says
+     "immediately": the agent states the store policy and the README records the tension.
+  6. **Accessories:** redirected politely, without naming another store (7.1).
+  7. **Today:** `EMPORIO_TODAY` defaults to 2026-03-23, the day after the last order; the time of day comes from the
+     real clock in store time, UTC-4 (Campo Grande, no daylight saving time since 2019, while Brasília is UTC-3); a
+     full date and time fixes both for tests and the evaluation. Holidays are not computed (known limitation).
+  8. **Past order totals:** shown as recorded and never recomputed; the agent does not guess why a total differs from
+     its items (orders 3 and 20).
+  9. **Past installments:** shown as recorded; the installment rules apply to new quotes only (orders 9, 16 and 18).
+  10. **Availability:** active with stock is available; active without stock is out of stock, with similar
+      alternatives (7.3); discontinued with stock sells as last units, "while stock lasts, no reservation" (6.2;
+      Decreto 7.962/2013, art. 2, VI); discontinued without stock is no longer sold, with equivalents (7.3); coming
+      soon is not on sale, with no price or date promised, even when it has stock.
+  11. **Order lookup (LGPD, arts. 6 and 46):** needs the order number **and** the last 4 digits of the customer's
+      phone. The check runs in code and the model never sees the phone. Every failure gets the same neutral message;
+      after 3 failed attempts in a session the agent hands off to a human. The result carries only what the customer
+      needs (no phone, no e-mail). Customers are never identified by e-mail: two of them share one.
+  12. **Catalog gaps:** availability comes from the data, never from the manual's description of the catalog (chapter 1
+      mentions wind and orchestral instruments; categories 6 to 8 have no products). No restocking is promised.
+  13. **Data sent to LLM providers:** the Gemini free tier may use prompts to improve Google products, lets human
+      reviewers read them, and its terms ask not to send personal information. That is acceptable for this fictional
+      dataset only: the README states that real customer data needs a paid tier under a data processing agreement, and
+      the cost projection prices paid tiers. Files with conversations stay out of git.
+  14. **Virtual assistant:** the agent introduces itself as the store's virtual assistant (CDC, art. 6, III; the manual
+      mentions it in section 7). The AI bill PL 2338/2023 was still under review in the Chamber of Deputies when this
+      was written.
+  15. **Complaints:** the agent promises the manual's 24 business hours (7.3), stricter than the 5 days of Decreto
+      7.962/2013, art. 4.
+- **Sources (read on 2026-11-01):** [CDC, Lei 8.078/1990](https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm);
+  [Decreto 7.962/2013](https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm);
+  [Decreto 5.903/2006](https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/decreto/d5903.htm);
+  [Lei 13.455/2017](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/lei/l13455.htm);
+  [LGPD, Lei 13.709/2018](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm);
+  [Gemini API terms](https://ai.google.dev/gemini-api/terms) (updated 2026-04-28);
+  [PL 2338/2023](https://www.congressonacional.leg.br/web/atividade/materias/-/materia/157233).
+  This is a careful reading of the texts, not legal advice.
