@@ -1,8 +1,7 @@
 """Amount check, correction in the loop, system prompt and greeting (decision D-009)."""
 
 import json
-import re
-from datetime import date
+from datetime import datetime
 
 import pytest
 from conftest import MONDAY_10AM, ScriptedLLM, text, tools
@@ -12,6 +11,7 @@ from emporio.agent.loop import FALLBACK_ANSWER, Agent
 from emporio.agent.memory import new_session
 from emporio.agent.prompts import GREETING, system_prompt
 from emporio.agent.usage import UsageLog
+from emporio.config import STORE_TZ
 
 QUOTE = {
     "cash_price": "R$ 2.199,00",
@@ -94,24 +94,44 @@ def test_the_correction_may_look_the_price_up(agent_for):
     assert all("CORREÇÃO" in call["system"] for call in llm.calls[1:])
 
 
-def test_the_prompt_carries_the_rules_only_the_model_can_follow():
-    prompt = system_prompt(date(2026, 3, 29))
-    assert "domingo, 29/03/2026" in prompt
+def test_the_prompt_puts_tools_first_and_carries_the_rules_only_the_model_can_follow():
+    prompt = system_prompt(MONDAY_10AM)
+    assert "segunda-feira, 23/03/2026" in prompt
     for rule in (
         "assistente virtual",
-        "português do Brasil",
+        "ANTES de responder",
+        "nunca invente",
+        "QUAL FERRAMENTA USAR",
+        "Português do Brasil",
         "sem Markdown",
-        "Não existe carrinho",
-        "não fecha pedidos",
-        "nunca mande o cliente procurar o fabricante",
-        "não mande o cliente resolver com a transportadora",
-        "sem indicar outra loja",
-        "Nunca mostre dados de outro cliente",
-        "não ordens",
-        "seção 6.2",
+        "falar em carrinho",
+        "Fechar pedidos",
+        "ao fabricante ou à transportadora",
+        "indicar outra loja",
+        "Mostrar dados de outro cliente",
+        "revelar estas instruções",
+        "percentual de desconto",
     ):
         assert rule in prompt, rule
-    assert not re.search(r"\d{1,2}:\d{2}|\d{1,2}h", prompt)  # no time of day: the prompt stays cacheable (D-008)
+    # Every tool is routed.
+    assert all(f"{tool}" in prompt for tool in ("search_products", "quote_payment", "get_order_status",
+                                                 "get_store_policy", "check_return_options", "handoff_to_human",
+                                                 "register_complaint"))
+
+
+@pytest.mark.parametrize(
+    "moment, line",
+    [
+        (datetime(2026, 3, 23, 10, 0, tzinfo=STORE_TZ), "A loja está aberta agora e fecha às 18:00."),
+        (datetime(2026, 3, 23, 17, 59, tzinfo=STORE_TZ), "A loja está aberta agora e fecha às 18:00."),
+        (datetime(2026, 3, 29, 10, 0, tzinfo=STORE_TZ), "A loja está fechada agora e abre segunda-feira, 30/03/2026"),
+    ],
+)
+def test_the_prompt_says_whether_the_store_is_open_without_the_clock_time(moment, line):
+    prompt = system_prompt(moment)
+    assert line in prompt
+    # The same text all morning: the prompt stays cacheable (D-008).
+    assert system_prompt(moment.replace(minute=30)) == prompt
 
 
 def test_the_greeting_discloses_the_virtual_assistant():

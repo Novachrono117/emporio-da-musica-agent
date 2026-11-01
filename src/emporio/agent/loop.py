@@ -103,7 +103,7 @@ class Agent:
 
     def _complete(self, messages: list[Message], tools: list[dict], reminder: str = "") -> LLMResponse:
         started = time.perf_counter()
-        response = self.llm.complete(system_prompt(self.ctx.today()) + reminder, messages, tools)
+        response = self.llm.complete(system_prompt(self.ctx.now()) + reminder, messages, tools)
         if self.usage:
             self.usage.record(
                 self.session.id, self.llm.provider, self.llm.model, response, time.perf_counter() - started
