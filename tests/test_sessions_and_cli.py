@@ -95,6 +95,12 @@ def test_cli_resumes_a_session(chat):
     assert [m["content"] for m in llm.calls[0]["messages"]] == ["oi", "Olá!", "e agora?"]
 
 
+def test_without_options_the_cli_uses_the_model_the_evaluation_chose(chat, monkeypatch):
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    code, out, _ = chat(["sair"], ScriptedLLM(), ())
+    assert code == 0 and "(gemini / gemini-3.5-flash-lite)" in out
+
+
 def test_cli_reports_a_missing_key_without_starting(chat, monkeypatch):
     def no_key(provider, model):
         raise LLMError("GEMINI_API_KEY is not set: add it to .env (see .env.example)")

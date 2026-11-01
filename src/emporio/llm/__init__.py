@@ -7,8 +7,10 @@ import os
 from emporio.llm.base import LLMClient, LLMError
 
 PROVIDERS = ("ollama", "gemini", "anthropic")
-# Until the evaluation (phase 5) picks a default: the local model costs nothing, Flash-Lite keeps the 3.8 Flash quota
-# for the evaluation (D-003), and Haiku is the Claude candidate.
+# The evaluation made Gemini 3.5 Flash-Lite the default by rule 4: the highest pass rate, below the bar (D-010,
+# docs/EVAL.md). Ollama keeps Qwen 2.5 7B, which fits Ollama's default 4k context; Qwen 3.5 needs 8k. Haiku is the
+# Claude candidate.
+DEFAULT_PROVIDER = "gemini"
 DEFAULT_MODELS = {
     "ollama": "qwen2.5:7b-instruct-q4_K_M",
     "gemini": "gemini-3.5-flash-lite",

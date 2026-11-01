@@ -22,7 +22,7 @@ from emporio.agent.usage import UsageLog
 from emporio.config import STORE_TZ, agent_now
 from emporio.data.memory import InMemoryStore
 from emporio.data.policy import load_policy_manual
-from emporio.llm import DEFAULT_MODELS, PROVIDERS, create_client, redact
+from emporio.llm import DEFAULT_MODELS, DEFAULT_PROVIDER, PROVIDERS, create_client, redact
 from emporio.llm.base import LLMError, ToolCall
 from emporio.tickets import TicketLog
 from emporio.tools.base import Result, ToolContext
@@ -33,7 +33,7 @@ EXIT_WORDS = {"sair", "exit", "quit"}
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m emporio", description="Empório da Música virtual assistant.")
-    parser.add_argument("--provider", choices=PROVIDERS, help="default: LLM_PROVIDER in .env, else ollama")
+    parser.add_argument("--provider", choices=PROVIDERS, help=f"default: LLM_PROVIDER in .env, else {DEFAULT_PROVIDER}")
     parser.add_argument("--model", help="default: LLM_MODEL in .env, else the provider's default")
     parser.add_argument("--session", help="resume a saved session by its id")
     parser.add_argument("--verbose", action="store_true", help="show each tool call and its result")
@@ -48,7 +48,7 @@ def main(argv: list[str] | None = None) -> int:
     except SessionError as error:
         print(error)
         return 2
-    provider = args.provider or (session.provider if session else os.getenv("LLM_PROVIDER") or "ollama")
+    provider = args.provider or (session.provider if session else os.getenv("LLM_PROVIDER") or DEFAULT_PROVIDER)
     if provider not in PROVIDERS:
         print(f"Unknown provider {provider!r}; use one of: {', '.join(PROVIDERS)}")
         return 2
