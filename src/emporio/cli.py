@@ -74,6 +74,9 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"Empório da Música, assistente virtual ({provider} / {model})")
     print(f"Data da loja: {now:%d/%m/%Y} (EMPORIO_TODAY). Sessão {session.id}. Digite 'sair' para encerrar.")
+    if provider == "ollama":
+        # Ollama's API cannot raise the context, and its 4k default cuts Qwen 3.5's conversations (D-010).
+        print("Ollama: inicie o servidor com OLLAMA_CONTEXT_LENGTH=8192 (veja o README).")
     if not session.messages:
         print(f"\nAssistente: {GREETING}")  # fixed, outside the history (D-009)
     while True:

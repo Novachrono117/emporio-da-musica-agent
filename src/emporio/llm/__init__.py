@@ -8,11 +8,11 @@ from emporio.llm.base import LLMClient, LLMError
 
 PROVIDERS = ("ollama", "gemini", "anthropic")
 # The evaluation made Gemini 3.5 Flash-Lite the default by rule 4: the highest pass rate, below the bar (D-010,
-# docs/EVAL.md). Ollama keeps Qwen 2.5 7B, which fits Ollama's default 4k context; Qwen 3.5 needs 8k. Haiku is the
-# Claude candidate.
+# docs/EVAL.md). Ollama runs the best local model that fits an 8 GB GPU, Qwen 3.5 4B; it needs the Ollama server
+# started with an 8k context (README). Haiku is the Claude candidate.
 DEFAULT_PROVIDER = "gemini"
 DEFAULT_MODELS = {
-    "ollama": "qwen2.5:7b-instruct-q4_K_M",
+    "ollama": "qwen3.5:4b",
     "gemini": "gemini-3.5-flash-lite",
     "anthropic": "claude-haiku-5-5",
 }

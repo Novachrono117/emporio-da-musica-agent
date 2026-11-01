@@ -6,7 +6,7 @@ Each decision with its context, the options considered, the choice and the reaso
 
 ## D-001: Python tooling
 
-- **Status:** proposed in phase 0, awaiting approval.
+- **Status:** proposed in phase 0, approved by Vinicius on 2026-11-01.
 - **Context:** the brief requires Python; the repository must run from a clean clone on a second machine.
 - **Options:** pip with `pyproject.toml`; uv; Poetry.
 - **Choice:** Python 3.13 (3.12 also supported), a `.venv` created with `python -m venv`, dependencies declared in
@@ -16,7 +16,7 @@ Each decision with its context, the options considered, the choice and the reaso
 
 ## D-002: Store data kept byte for byte
 
-- **Status:** proposed in phase 0, awaiting approval.
+- **Status:** proposed in phase 0, approved by Vinicius on 2026-11-01.
 - **Context:** the CSVs use CRLF line endings. Git for Windows ships with `core.autocrlf=true`, which would store them
   with LF, so a clone would not be identical to the files received.
 - **Options:** accept the normalisation; mark `data/` as binary-like in `.gitattributes`.
@@ -342,7 +342,9 @@ Each decision with its context, the options considered, the choice and the reaso
      temporariamente" (Flash-Lite). It now excludes what that wrong answer would say ("não vend", "não trabalha",
      "não comercializ"); the answer must still say the product is out of stock.
 - **Result (2026-11-01, `docs/EVAL.md`):** no model met rule 2. By rule 4 the default is Gemini 3.5 Flash-Lite
-  (93% of scenario runs, every expected tool, 98% of the facts); the README says it did not meet the bar.
+  (93% of scenario runs, every expected tool, 98% of the facts); the README says it did not meet the bar. The
+  default local model is Qwen 3.5 4B (62%, against 44% for Qwen 2.5 7B), the best that fits an 8 GB GPU; it needs
+  the 8k context, which the README explains and the CLI reminds (approved by Vinicius on 2026-11-01).
 - **Local models:** Qwen 3.5 runs with its default thinking mode on (Ollama's default for the model), on an Ollama
   server with an 8,192-token context (`OLLAMA_CONTEXT_LENGTH=8192`). The first Qwen 3.5 4B runs used Ollama's default
   of 4,096 tokens on GPUs under 24 GB: with thinking, input plus output reached exactly 4,096 tokens in some calls, so

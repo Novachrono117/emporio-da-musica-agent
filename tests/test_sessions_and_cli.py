@@ -65,6 +65,7 @@ def test_cli_chats_saves_and_shows_tools_when_verbose(chat):
     code, out, sessions = chat(["Quanto custa o Takamine GD20?", "sair"], llm, ("--provider", "ollama", "--verbose"))
     assert code == 0
     assert "Data da loja: 23/03/2026" in out
+    assert "OLLAMA_CONTEXT_LENGTH=8192" in out  # the 8k reminder for Ollama (D-010)
     assert "[tool] search_products" in out and "Assistente: Custa R$ 2.199,00." in out
     [saved] = sessions.glob("*.json")
     data = json.loads(saved.read_text(encoding="utf-8"))
@@ -99,6 +100,7 @@ def test_without_options_the_cli_uses_the_model_the_evaluation_chose(chat, monke
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
     code, out, _ = chat(["sair"], ScriptedLLM(), ())
     assert code == 0 and "(gemini / gemini-3.5-flash-lite)" in out
+    assert "OLLAMA_CONTEXT_LENGTH" not in out
 
 
 def test_cli_reports_a_missing_key_without_starting(chat, monkeypatch):

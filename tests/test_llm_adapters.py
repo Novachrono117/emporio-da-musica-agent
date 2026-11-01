@@ -232,6 +232,6 @@ def test_missing_keys_are_reported_by_name(monkeypatch):
         create_client("anthropic")
     with pytest.raises(LLMError, match="GEMINI_API_KEY is not set"):
         create_client("gemini")
-    assert create_client("ollama").model == "qwen2.5:7b-instruct-q4_K_M"
+    assert create_client("ollama").model == "qwen3.5:4b"
     with pytest.raises(LLMError, match="unknown provider 'openai'"):
         create_client("openai")
