@@ -21,4 +21,6 @@ def test_env_example_lists_every_setting():
 
 
 def test_env_example_has_no_values():
-    assert all(value == "" for value in _entries().values())
+    # Report variable names only: the values may be real keys.
+    filled = sorted(name for name, value in _entries().items() if value)
+    assert not filled, f".env.example must not carry values; clear: {', '.join(filled)}"
