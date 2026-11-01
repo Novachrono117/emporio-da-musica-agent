@@ -205,6 +205,13 @@ Each decision with its context, the options considered, the choice and the reaso
      law, which the agent may quote to a customer.
   7. **Failed order lookups** are counted per session in code; at the third failure the tool stops checking and tells
      the agent to hand off. Known limitation, for the README: a new session starts the count again.
+- **Changed after the evaluation (2026-11-01, approved by Vinicius):** in run 3 of Gemini Flash-Lite (`order_lockout`)
+  the agent handed off after two failed lookups and told the customer the checks were over, skipped the third
+  attempt, then checked the fourth, which was the right pair, and showed the order. The code kept its rule (only two
+  lookups had failed, and the right pair verifies by design), but the agent announced a lock the code did not hold. A
+  hand-off with reason `order_verification_failed` now locks the lookup too, if at least one lookup failed in the
+  session: models also pick that reason for a late delivery the customer was verified for (phase 4 transcript, and
+  run 3 of `order_late_delivery`). The evaluation runs were made before this change.
 - **Tools (eight):** `search_products`, `get_product_details`, `get_order_status`, `quote_payment`,
   `check_return_options`, `get_store_policy`, `register_complaint`, `handoff_to_human`.
 - **Interpretation (rule 10):** products that are not for sale (coming soon, or discontinued with no stock) are shown

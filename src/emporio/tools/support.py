@@ -1,13 +1,15 @@
 """register_complaint and handoff_to_human: both record a ticket in the local log (decision D-006).
 
 A hand-off also records regret requests and warranty claims, which a person must process (D-005, rules 4 and 5), and
-tells the agent whether the store is open now and when it opens next (7.1).
+tells the agent whether the store is open now and when it opens next (7.1). A hand-off for failed order verification
+locks the order lookup, as three failures do (D-006, item 7).
 """
 
 from __future__ import annotations
 
 from emporio.company import CONTACTS, HOURS_TEXT, store_status
 from emporio.tools.base import Result, Tool, ToolContext, ToolError
+from emporio.tools.orders import MAX_FAILED_LOOKUPS
 
 MAX_TEXT = 2000
 HANDOFF_REASONS = (
@@ -35,6 +37,10 @@ def handoff_to_human(ctx: ToolContext, reason: str, summary: str, contact: str |
     fields = _fields(summary, contact)
     now = ctx.now()
     ticket_id = ctx.tickets.open("handoff", now, reason=reason, **fields)
+    if reason == "order_verification_failed" and ctx.failed_order_lookups:
+        # The agent tells the customer the checks are over, so they are. Only after a real failure: models also pick
+        # this reason for a late delivery the customer was verified for.
+        ctx.failed_order_lookups = MAX_FAILED_LOOKUPS
     message = "Tell the customer a person will continue the service and give the ticket id."
     if reason == "regret_request":
         message = "Confirm to the customer that the regret request was received, with the ticket id."

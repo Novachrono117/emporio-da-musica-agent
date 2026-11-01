@@ -6,6 +6,7 @@ import pytest
 
 from emporio.config import STORE_TZ
 from emporio.tools.base import ToolError
+from emporio.tools.orders import get_order_status
 from emporio.tools.support import handoff_to_human, register_complaint
 
 
@@ -43,6 +44,21 @@ def test_handoff_outside_hours_says_when_the_store_opens(ctx):
     result = handoff_to_human(ctx, "warranty_claim", "Defeito no captador depois de 40 dias.")
     assert result["open_now"] is False
     assert result["next_opening"] == "segunda-feira, 30/03/2026, às 09:00"
+
+
+def test_handoff_for_failed_verification_locks_the_order_lookup(ctx):
+    # Gemini Flash-Lite handed off after two failures, told the customer the checks were over, then checked again.
+    get_order_status(ctx, 3, "1111")
+    get_order_status(ctx, 3, "2222")
+    handoff_to_human(ctx, "order_verification_failed", "Duas tentativas erradas no pedido 3.")
+    assert get_order_status(ctx, 3, "9012")["locked"] is True
+
+
+def test_handoff_for_verification_without_a_failure_does_not_lock(ctx):
+    # Models also pick this reason for a late delivery the customer was verified for.
+    assert get_order_status(ctx, 8, "7821")["verified"] is True
+    handoff_to_human(ctx, "order_verification_failed", "Pedido 8 atrasado.")
+    assert get_order_status(ctx, 8, "7821")["verified"] is True
 
 
 @pytest.mark.parametrize("summary", ["", "x" * 2001])
