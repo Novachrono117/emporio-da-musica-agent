@@ -33,13 +33,13 @@ def _amounts(pattern: re.Pattern[str], text: str) -> list[tuple[str, Decimal]]:
     found = []
     for match in pattern.finditer(text):
         raw = match.group(1) if pattern.groups else match.group(0)
-        value = _value(raw)
+        value = parse_amount(raw)
         if value is not None:
             found.append((raw, value))
     return found
 
 
-def _value(raw: str) -> Decimal | None:
+def parse_amount(raw: str) -> Decimal | None:
     if "," in raw and "." in raw:
         # Whichever separator comes last is the decimal one: 1.234,56 (Brazilian) or 1,234.56 (English).
         raw = raw.replace(".", "").replace(",", ".") if raw.rfind(",") > raw.rfind(".") else raw.replace(",", "")

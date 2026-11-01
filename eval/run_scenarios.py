@@ -64,9 +64,24 @@ class Throttled:
 
 
 class CountingUsage(UsageLog):
+    """The usage log, plus per-session totals the evaluation reads (D-010)."""
+
     def __init__(self, path: Path | None = None) -> None:
         super().__init__(path) if path else super().__init__()
         self.events: list[tuple[str, str]] = []
+        self.sessions: dict[str, dict[str, Any]] = {}
+
+    def record(self, session_id: str, provider: str, model: str, response: LLMResponse, latency_s: float) -> None:
+        super().record(session_id, provider, model, response, latency_s)
+        totals = self.sessions.setdefault(
+            session_id,
+            {"calls": 0, "input_tokens": 0, "output_tokens": 0, "cached_input_tokens": 0, "latencies": []},
+        )
+        totals["calls"] += 1
+        totals["input_tokens"] += response.usage.input_tokens
+        totals["output_tokens"] += response.usage.output_tokens
+        totals["cached_input_tokens"] += response.usage.cached_input_tokens
+        totals["latencies"].append(round(latency_s, 3))
 
     def event(self, session_id: str, name: str, **details: Any) -> None:
         super().event(session_id, name, **details)
@@ -87,6 +102,8 @@ class Outcome:
     error: str = ""
     corrections: int = 0
     seconds: float = 0.0
+    messages: list[dict[str, Any]] = field(default_factory=list)  # the session history, for grading
+    usage: dict[str, Any] = field(default_factory=dict)  # calls, tokens and latencies of this scenario
 
 
 def run_scenario(
@@ -119,6 +136,8 @@ def run_scenario(
         outcome.turns.append(Turn(text, list(calls), answer))
     outcome.seconds = time.perf_counter() - started
     outcome.corrections = sum(1 for session_id, _ in usage.events if session_id == session.id)
+    outcome.messages = session.messages
+    outcome.usage = usage.sessions.get(session.id, {})
     return outcome
 
 
