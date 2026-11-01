@@ -46,6 +46,21 @@ def test_name_and_category_matches_come_before_description_matches(ctx):
     assert 128 not in _ids(result)
 
 
+def test_products_asked_by_name_but_not_for_sale_are_reported_not_missing(ctx):
+    # Gemini answered "we do not have the GF-3D" when the default search hid it; it is out of stock.
+    result = search_products(ctx, query="Giannini GF-3D")
+    assert result["products"] == []
+    [match] = result["not_for_sale_matches"]
+    assert (match["id"], match["availability"]) == (96, "out_of_stock")
+    [coming] = search_products(ctx, query="Kala KA-ABP-CTG")["not_for_sale_matches"]
+    assert (coming["id"], coming["availability"]) == (130, "coming_soon") and "price" not in coming
+    assert 96 not in ctx.seen_products  # cannot be quoted
+
+
+def test_generic_searches_do_not_list_unavailable_products(ctx):
+    assert "not_for_sale_matches" not in search_products(ctx, query="violão")
+
+
 def test_out_of_stock_items_only_when_asked(ctx):
     assert 96 not in _ids(search_products(ctx, query="Giannini GF-3D"))
     [product] = search_products(ctx, query="Giannini GF-3D", in_stock_only=False)["products"]

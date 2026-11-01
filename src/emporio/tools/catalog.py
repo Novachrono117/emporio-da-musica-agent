@@ -57,35 +57,41 @@ def search_products(
         raise ToolError("invalid_input", "min_price must not be greater than max_price")
 
     category_ids = _category_ids(ctx, category) if category else None
-    rows = []
+    if query and _asks_for_accessory(_words(query)):
+        # Instruments that merely mention strings or pedals would read as a yes (seen with Qwen 2.5 7B).
+        return {"total_matches": 0, "products": [], "accessory_note": ACCESSORY_NOTE}
+
+    candidates = []  # every product that passes the category and price filters, for sale or not
     for product in ctx.store.list_products():
         if category_ids is not None and product.category_id not in category_ids:
-            continue
-        if in_stock_only and product.availability not in FOR_SALE:
             continue
         price = current_price(ctx.store, product)[0] if product.availability in PRICED else None
         if (min_price is not None or max_price is not None) and price is None:
             continue
         if (min_price is not None and price < min_price) or (max_price is not None and price > max_price):
             continue
-        rows.append((product, price))
+        candidates.append((product, price))
 
     strong: dict[int, int] = {}
-    if query and _asks_for_accessory(_words(query)):
-        # Instruments that merely mention strings or pedals would read as a yes (seen with Qwen 2.5 7B).
-        return {"total_matches": 0, "products": [], "accessory_note": ACCESSORY_NOTE}
     if query:
+        # Matching runs before the stock filter, so a product asked by name is never reported as missing.
         words = _words(query)
-        scored = [(_score(ctx, words, product), product, price) for product, price in rows]
+        scored = [(_score(ctx, words, product), product, price) for product, price in candidates]
         best = max((anywhere for (anywhere, _), _, _ in scored), default=0)
-        rows = [(product, price) for (anywhere, _), product, price in scored if anywhere == best and best > 0]
+        candidates = [(product, price) for (anywhere, _), product, price in scored if anywhere == best and best > 0]
         strong = {product.id: in_name for (_, in_name), product, _ in scored}
+    rows = [row for row in candidates if not in_stock_only or row[0].availability in FOR_SALE]
     # Products whose name or category holds the words first, then the cheapest.
     rows.sort(key=lambda row: (-strong.get(row[0].id, 0), row[1] is None, row[1] or 0, row[0].name))
 
     shown = [product for product, _ in rows[:limit]]
     ctx.seen_products.update(product.id for product in shown)
     result: Result = {"total_matches": len(rows), "products": [_summary(ctx, product) for product in shown]}
+    unavailable = [product for product, _ in candidates if product.availability not in FOR_SALE]
+    if query and not rows and unavailable:
+        # Asked by name but not for sale: say so (7.3) instead of "not found".
+        result["not_for_sale_matches"] = [_summary(ctx, product) for product in unavailable[:limit]]
+        return result
     if not rows:
         empty_category = category_ids is not None and not any(
             product.category_id in category_ids for product in ctx.store.list_products()
