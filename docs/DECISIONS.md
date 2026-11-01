@@ -224,3 +224,36 @@ Each decision with its context, the options considered, the choice and the reaso
   descriptions held. The raw file is unchanged.
 - **Why:** a small local model can ignore a note but cannot repeat a text it never sees. The cost is losing the
   descriptive text of seven products, which is the text that is wrong.
+
+## D-008: Agent loop, sessions and LLM adapters (phase 3)
+
+- **Status:** approved by Vinicius on 2026-11-01.
+- **Context:** the plan (sections 4 and 8) fixes the shape: one LLM interface, an adapter for the Anthropic SDK and one
+  for OpenAI-compatible endpoints (Gemini, Ollama), a loop with a cap of 6 tool rounds, sessions saved as JSON and a
+  CLI. Five points were open.
+- **Choices:**
+  1. **Neutral history with an opaque block per provider.** Sessions keep one format (user, assistant with tool calls,
+     tool result). Each assistant message also keeps the provider's raw response, replayed unchanged to the same
+     provider only. Claude needs the assistant turn back as it came, thinking blocks included, next to the tool
+     results, and editing an earlier turn invalidates them; Gemini needs its thought signatures back (D-003). With
+     another provider the adapter rebuilds the message from the neutral fields. Rejected: a native history per
+     provider, which would give the session store and the evaluation two formats to read.
+  2. **Tool round cap:** up to 6 rounds of tool calls per customer message. If the model asks for a seventh, the
+     request is dropped and the agent answers with a fixed message in Portuguese that offers a person, without calling
+     the model again. The history stays valid: no tool call is left without its result.
+  3. **Product id guard:** `quote_payment` accepts only product ids that `search_products` or `get_product_details`
+     returned in the session; any other id is refused with a message asking for a lookup first. In the phase 2 schema
+     check, Qwen 2.5 7B quoted ids it made up, one of which belonged to another product.
+  4. **Usage log:** every model call appends provider, model, input, output and cached tokens, latency, the names of
+     the tools called and the session id to `logs/usage.jsonl`, kept out of git. The conversation text is not logged
+     (LGPD). Phases 5 and 6 read it.
+  5. **No streaming in the CLI:** answers print whole, which keeps the adapters simple and the latency measurable per
+     call, at the cost of a few seconds of waiting on the local model.
+- **Provider settings (read in the current Anthropic docs on 2026-11-01):** Claude Haiku 5.5 uses adaptive thinking by
+  default, effort `low`, `strict: true` on every tool and automatic prompt caching (top-level `cache_control`). Caching
+  is a prefix match, so the system prompt carries the store date but not the time of day; tools that depend on the
+  time (hours, hand-off) compute it themselves. A `refusal` stop gets the same fixed message as the cap. Gemini and
+  Ollama receive the same schemas without `strict`: OpenAI's strict mode requires every property to be required, and
+  the tools have optional ones; the validator checks their input.
+- **Known limitation:** without API credit, the Claude adapter is tested against recorded SDK objects only, not
+  against the live API.
