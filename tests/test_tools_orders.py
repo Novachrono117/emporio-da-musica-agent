@@ -17,6 +17,7 @@ def test_verified_order_shows_status_tracking_and_late_delivery(ctx):
     assert order["tracking_code"] == "BRJL5544332BR"
     assert order["estimated_delivery"] == "28/02/2026"
     assert order["estimated_delivery_passed"] is True  # today is 23/03/2026
+    assert "handoff_to_human" in order["delivery_note"] and "carrier" in order["delivery_note"]
 
 
 def test_result_carries_no_personal_data(ctx, store):

@@ -80,10 +80,14 @@ def test_unknown_category_lists_the_real_ones(ctx):
         search_products(ctx, category="harpas")
 
 
-def test_accessory_words_add_a_note(ctx):
-    assert "instruments only" in search_products(ctx, query="cordas de violão")["accessory_note"]
-    assert "accessory_note" in search_products(ctx, query="amplificadores")
-    assert "accessory_note" not in search_products(ctx, query="violão 7 cordas")
+def test_accessory_requests_return_the_note_and_no_products(ctx):
+    # Seven-string guitars mention "cordas"; listing them read as a yes to a request for strings.
+    result = search_products(ctx, query="cordas de violão")
+    assert result["products"] == [] and "does not sell accessories" in result["accessory_note"]
+    assert search_products(ctx, query="amplificadores")["products"] == []
+    for instrument in ("violão 7 cordas", "violão de sete cordas"):
+        result = search_products(ctx, query=instrument)
+        assert "accessory_note" not in result and result["products"], instrument
 
 
 @pytest.mark.parametrize(

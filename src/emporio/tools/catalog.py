@@ -33,6 +33,11 @@ _STOPWORDS = frozenset("a as o os e de da das do dos em no na nos nas para por c
 _PLURALS = (("oes", "ao"), ("aes", "ao"), ("ais", "al"), ("eis", "el"), ("ores", "or"), ("ns", "m"), ("s", ""))
 # Accessories the store does not sell (sections 1 and 7.1), in the singular form _words produces.
 _ACCESSORIES = frozenset({"corda", "palheta", "cabo", "case", "pedal", "amplificador"})
+_STRING_COUNTS = frozenset({"6", "7", "12", "seis", "sete", "doze"})  # "violão de 7 cordas" is an instrument
+ACCESSORY_NOTE = (
+    "The store does not sell accessories: strings, picks, cables, cases, pedals or amplifiers (sections 1 and 7.1). "
+    "Tell the customer politely, without naming another store, and offer help with instruments."
+)
 
 
 def search_products(
@@ -66,6 +71,9 @@ def search_products(
         rows.append((product, price))
 
     strong: dict[int, int] = {}
+    if query and _asks_for_accessory(_words(query)):
+        # Instruments that merely mention strings or pedals would read as a yes (seen with Qwen 2.5 7B).
+        return {"total_matches": 0, "products": [], "accessory_note": ACCESSORY_NOTE}
     if query:
         words = _words(query)
         scored = [(_score(ctx, words, product), product, price) for product, price in rows]
@@ -78,12 +86,6 @@ def search_products(
     shown = [product for product, _ in rows[:limit]]
     ctx.seen_products.update(product.id for product in shown)
     result: Result = {"total_matches": len(rows), "products": [_summary(ctx, product) for product in shown]}
-    if query and _asks_for_accessory(_words(query)):
-        result["accessory_note"] = (
-            "The store sells instruments only, no strings, picks, cables, cases, pedals or amplifiers (sections 1 "
-            "and 7.1). If the customer wants an accessory, say so politely without naming another store; the "
-            "products listed are instruments whose description mentions the word."
-        )
     if not rows:
         empty_category = category_ids is not None and not any(
             product.category_id in category_ids for product in ctx.store.list_products()
@@ -156,9 +158,9 @@ def _details(ctx: ToolContext, product: Product) -> Result:
 
 
 def _asks_for_accessory(words: list[str]) -> bool:
-    """True for "cordas" or "pedal", false for "7 cordas" (a seven-string guitar)."""
+    """True for "cordas" or "pedal", false for "7 cordas" or "sete cordas" (a seven-string guitar)."""
     return any(
-        word in _ACCESSORIES and not (word == "corda" and index > 0 and words[index - 1].isdigit())
+        word in _ACCESSORIES and not (word == "corda" and index > 0 and words[index - 1] in _STRING_COUNTS)
         for index, word in enumerate(words)
     )
 

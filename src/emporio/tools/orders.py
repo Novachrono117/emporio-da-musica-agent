@@ -20,6 +20,10 @@ LOCKED = (
     "handoff_to_human, reason order_verification_failed."
 )
 OPEN_STATUSES = (OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.SHIPPED)
+LATE_DELIVERY_NOTE = (
+    "The estimated delivery date has passed. Apologise and offer a person from the team (handoff_to_human); do not "
+    "send the customer to the carrier."
+)
 
 
 def get_order_status(ctx: ToolContext, order_id: int, phone_last4: str) -> Result:
@@ -61,6 +65,7 @@ def _order(ctx: ToolContext, order: Order) -> Result:
         result["estimated_delivery"] = br_date(order.estimated_delivery)
         if order.status in OPEN_STATUSES and order.estimated_delivery < ctx.today():
             result["estimated_delivery_passed"] = True
+            result["delivery_note"] = LATE_DELIVERY_NOTE
     if order.notes:
         result["notes"] = order.notes
     return result
