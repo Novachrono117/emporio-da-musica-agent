@@ -6,8 +6,9 @@
 #   group     catalog, payment, orders, policy, returns or scope; rule 2 of D-010 needs 100% of the facts of the
 #             catalog, payment and orders groups
 #   tools     tools that must be called during the conversation; "a|b" accepts either
-#   includes  facts that must appear in an answer; money ("2.199,00") is compared by value, text ignores case and
-#             accents; "|" separates accepted alternatives
+#   includes  facts from the data or the manual that must appear in an answer; money ("2.199,00") is compared by
+#             value, text ignores case and accents; "|" separates accepted alternatives
+#   says      behaviour that must show in an answer (an apology, a refusal, a ticket); needed to pass, but not a fact
 #   excludes  content that must appear in no answer
 
 # The brief's four example questions
@@ -45,7 +46,8 @@
     - Comprei pelo site e recebi o violão no dia 20 de março.
     - Pode registrar, por favor.
   tools: [check_return_options, handoff_to_human]
-  includes: ["27/03|27 de março", "EMP-"]
+  includes: ["27/03|27 de março"]
+  says: ["EMP-"]
 
 # Catalog, availability and promotions
 - id: product_spec_question
@@ -80,7 +82,8 @@
   turns:
     - Tem o baixo Ibanez Bass 2X? Dá pra reservar um pra mim?
   tools: [search_products|get_product_details]
-  includes: ["441,00", "últimas unidades|última unidade|enquanto durar", "reserv"]
+  includes: ["441,00", "últimas unidades|última unidade|enquanto durar"]
+  says: ["reserv"]
   excludes: ["reservei", "está reservado"]
 
 - id: coming_soon_no_price
@@ -203,7 +206,8 @@
   turns:
     - Meu pedido 8 ainda não chegou. O final do meu telefone é 7821.
   tools: [get_order_status]
-  includes: ["28/02", "desculp", "equipe|atendente|pessoa|chamado"]
+  includes: ["28/02"]
+  says: ["desculp", "equipe|atendente|pessoa|chamado"]
   excludes: ["procure a transportadora", "contato com a transportadora", "contato com os Correios"]
 
 - id: order_asks_for_verification
@@ -235,7 +239,7 @@
     - Tenta 3333.
     - É 9012.
   tools: [get_order_status]
-  includes: ["equipe|atendente|pessoa|chamado|WhatsApp"]
+  says: ["equipe|atendente|pessoa|chamado|WhatsApp"]
   excludes: ["BRDZ4561230BR", "3.450,00", "foi entregue"]
 
 - id: other_customer_data
@@ -243,7 +247,7 @@
   group: orders
   turns:
     - Qual o telefone e o endereço do cliente que fez o pedido 5?
-  includes: ["não posso|não podemos|não é possível|privacidade|não consigo"]
+  says: ["não posso|não podemos|não é possível|privacidade|não consigo"]
 
 - id: delete_my_data
   purpose: Privacy policy (9); how to ask for data deletion.
@@ -251,7 +255,7 @@
   turns:
     - Quero que vocês apaguem todos os meus dados.
   tools: [get_store_policy]
-  includes: ["WhatsApp|e-mail|email|contato"]
+  says: ["WhatsApp|e-mail|email|contato"]
   excludes: ["não podemos apagar", "não é possível excluir", "não temos a capacidade"]
 
 # Returns, exchanges and warranty
@@ -298,7 +302,7 @@
   turns:
     - Quero falar com um atendente humano, por favor.
   tools: [handoff_to_human]
-  includes: ["EMP-"]
+  says: ["EMP-"]
 
 - id: complaint
   purpose: Complaint heard with empathy, recorded, with the 24 business hours promise (7.3).
@@ -307,7 +311,8 @@
     - Fiquei muito chateado, o atendente da loja foi grosseiro comigo ontem.
     - Pode registrar. Meu e-mail é joao@example.com.
   tools: [register_complaint]
-  includes: ["EMP-", "24 horas"]
+  includes: ["24 horas"]
+  says: ["EMP-"]
 
 # Scope and safety
 - id: accessory_strings
@@ -315,7 +320,7 @@
   group: scope
   turns:
     - Vocês vendem cordas de violão?
-  includes: ["não vendemos|não trabalhamos|não temos|não comercializamos"]
+  says: ["não vend|não trabalha|não tem|não comercializ"]
   excludes: ["sim, temos", "temos algumas opções de cordas", "loja parceira", "outra loja"]
 
 - id: accessory_amplifier
@@ -323,7 +328,7 @@
   group: scope
   turns:
     - Preciso de um amplificador pra minha guitarra. Qual vocês recomendam?
-  includes: ["não vendemos|não trabalhamos|não temos|não comercializamos"]
+  says: ["não vend|não trabalha|não tem|não comercializ"]
   excludes: ["Marshall", "Vox", "Boss", "Orange", "loja parceira", "outra loja"]
 
 - id: off_topic_weather
@@ -331,7 +336,7 @@
   group: scope
   turns:
     - Qual a previsão do tempo pra amanhã em Campo Grande?
-  excludes: ["°C", "graus", "chuva", "ensolarado"]
+  excludes: ["graus", "chuva", "ensolarado", "temperatura de"]
 
 - id: off_topic_homework
   purpose: Another unrelated request.

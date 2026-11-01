@@ -24,14 +24,15 @@ def test_scenarios_are_well_formed():
     assert len(ids) == len(set(ids)) >= 30
     tool_names = {tool.name for tool in TOOLS}
     for scenario in SCENARIOS:
-        assert set(scenario) <= {"id", "purpose", "group", "turns", "now", "tools", "includes", "excludes"}, scenario
+        keys = {"id", "purpose", "group", "turns", "now", "tools", "includes", "says", "excludes"}
+        assert set(scenario) <= keys, scenario
         assert scenario["purpose"] and scenario["group"] in GROUPS, scenario["id"]
         assert all(isinstance(turn, str) and turn.strip() for turn in scenario["turns"])
         for group in scenario.get("tools", []):
             assert set(group.split("|")) <= tool_names, (scenario["id"], group)
-        for item in scenario.get("includes", []) + scenario.get("excludes", []):
+        for item in scenario.get("includes", []) + scenario.get("says", []) + scenario.get("excludes", []):
             assert isinstance(item, str) and item.strip(), scenario["id"]
-        assert scenario.get("includes") or scenario.get("excludes"), f"{scenario['id']} has no expectation"
+        assert any(scenario.get(k) for k in ("includes", "says", "excludes")), f"{scenario['id']} has no expectation"
         agent_now(scenario.get("now", run_scenarios.DEFAULT_NOW))  # raises on a bad date
     assert [i for i in ids if i.startswith("brief_")] == [
         "brief_guitars_under_1000",

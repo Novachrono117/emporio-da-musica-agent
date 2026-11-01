@@ -9,6 +9,7 @@ Usage:
     python eval/run_eval.py --provider gemini --model gemini-3.5-flash-lite --reps 3 --min-interval 4.5
     python eval/run_eval.py --provider gemini --model gemini-3.8-flash --only brief_takamine_price,complaint
     python eval/run_eval.py --report
+    python eval/run_eval.py --regrade    # apply the current expectations to every stored answer, then --report
 """
 
 from __future__ import annotations
@@ -67,6 +68,14 @@ def write_report(scenario_count: int) -> Path:
     return REPORT
 
 
+def regrade_all(scenarios: dict[str, dict]) -> None:
+    customers = load_store_data().customers
+    for path in sorted(RESULTS.glob("*.jsonl")):
+        records = [grading.regrade(r, scenarios[r["scenario"]], customers) for r in read_records(path)]
+        path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records), encoding="utf-8")
+        print(f"Regraded {len(records)} records in {_shown(path)}")
+
+
 def _shown(path: Path) -> str:
     return str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
 
@@ -79,12 +88,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--only", help="comma-separated scenario ids (a partial run)")
     parser.add_argument("--min-interval", type=float, default=0.0, help="seconds between model calls")
     parser.add_argument("--report", action="store_true", help="only rebuild docs/EVAL.md from eval/results/")
+    parser.add_argument("--regrade", action="store_true", help="regrade stored answers, then rebuild the report")
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     scenarios = yaml.safe_load(SCENARIOS.read_text(encoding="utf-8"))
     scenario_count = len(scenarios)  # a complete run covers all of them, even when --only runs a few
-    if args.report:
+    if args.regrade:
+        regrade_all({s["id"]: s for s in scenarios})
+    if args.report or args.regrade:
         print(f"Report: {_shown(write_report(scenario_count))}")
         return 0
     if not args.provider:

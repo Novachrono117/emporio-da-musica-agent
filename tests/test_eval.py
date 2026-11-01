@@ -183,3 +183,26 @@ def test_runner_resumes_and_writes_the_report(tmp_path, monkeypatch):
     # Resuming skips the finished scenario run: no model call is made.
     assert run_eval.main(["--provider", "ollama", "--only", "brief_takamine_price"]) == 0
     assert len(llm.calls) == 2
+
+
+def test_behaviour_is_needed_to_pass_but_is_not_a_fact():
+    scenario = {**SCENARIO, "says": ["desculp"]}
+    record = grading.grade(scenario, _outcome("No Pix fica R$ 2.089,05.", tools_called=QUOTED), CUSTOMERS)
+    assert record["says_missing"] == ["desculp"] and not record["passed"]
+    assert record["facts_missing"] == []  # the fact rate of rule 2 is untouched
+    assert "did not say" in grading.reasons(record)[0]
+
+
+def test_symbols_erased_by_accent_folding_do_not_match_every_answer():
+    # "°C" folded to "c" and failed the first weather answer that had no temperature at all.
+    assert not grading._found("°C", "Não sei sobre o tempo, mas posso ajudar com instrumentos.")
+    assert grading._found("°C", "Amanhã faz 30°C.")
+
+
+def test_regrade_applies_new_expectations_to_stored_answers():
+    record = grading.grade(SCENARIO, _outcome("No Pix fica R$ 2.089,05.", tools_called=QUOTED), CUSTOMERS)
+    record.update(provider="p", model="m", rep=2, invented_delivered=["R$ 1,00"])
+    stricter = {**SCENARIO, "includes": ["2.089,05", "pix", "boleto"]}
+    regraded = grading.regrade(record, stricter, CUSTOMERS)
+    assert regraded["facts_missing"] == ["boleto"]
+    assert (regraded["rep"], regraded["invented_delivered"], regraded["calls"]) == (2, ["R$ 1,00"], 2)

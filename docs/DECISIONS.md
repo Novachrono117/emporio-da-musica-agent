@@ -312,3 +312,16 @@ Each decision with its context, the options considered, the choice and the reaso
   full runs each; a larger local model on the desktop (10 GB GPU), three full runs, chosen from the current Ollama
   library; Claude Haiku 5.5 in the cost projection only (no credit). Three runs because phase 4 showed answers vary;
   results are reported as mean and range. Free-tier latency is not a proxy for paid latency.
+- **Changed after the first run, before any selection (2026-11-01):** reading the first Gemini Flash-Lite run showed
+  a gap in the rule's wording and two grader bugs. The fixes apply to every stored answer through
+  `eval/run_eval.py --regrade`; no answer was rerun or edited, and failures the grader got right stay failures (a
+  garbled date, a "laminated" top the data does not mention, a request for another customer's data answered with a
+  request for verification).
+  1. Behaviour phrases (an apology, a refusal, a ticket number) were counted as facts, so the 100% of rule 2 measured
+     wording, not data. They moved to a separate `says` list: still needed for a scenario to pass, not counted as
+     facts.
+  2. "°C" folded to "c" and matched every answer; items shorter than three letters after folding are now compared as
+     written.
+  3. A refusal written "a gente não trabalha com..." was rejected; refusals now match on stems ("não vend",
+     "não trabalha").
+- **Local models:** Qwen 3.5 runs with its default thinking mode on (Ollama's default for the model).

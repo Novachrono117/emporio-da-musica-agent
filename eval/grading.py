@@ -1,8 +1,9 @@
 """Grading of scenario runs and the evaluation report (DECISIONS.md, D-010).
 
-`grade` turns one scenario run into a JSON-ready record: expected tools, facts that must appear, content that must not,
-and the checks that apply to every scenario (leaks, invented amounts, other scripts, tool calls written as text,
-Markdown). `summarize` aggregates the records of a model and `render_report` writes docs/EVAL.md, applying the
+`grade` turns one scenario run into a JSON-ready record: expected tools, facts that must appear, behaviour that must
+show, content that must not, and the checks that apply to every scenario (leaks, invented amounts, other scripts, tool
+calls written as text, Markdown). `regrade` applies the current expectations to a stored record without calling the
+model again. `summarize` aggregates the records of a model and `render_report` writes docs/EVAL.md, applying the
 selection rule written before any run.
 """
 
@@ -31,7 +32,10 @@ _TOOL_AS_TEXT = re.compile(rf"</?tool_call>|\"arguments\"\s*:|\{{\s*\"name\"\s*:
 _MARKDOWN = re.compile(r"\*\*|__|^#{1,6}\s|`", re.MULTILINE)
 
 
-def grade(scenario: dict[str, Any], outcome: Any, customers: Iterable[Customer]) -> dict[str, Any]:
+def grade(
+    scenario: dict[str, Any], outcome: Any, customers: Iterable[Customer], invented: list[str] | None = None
+) -> dict[str, Any]:
+    """`invented` replaces the check on the session history when regrading a stored record, which has no history."""
     answers = [turn.answer for turn in outcome.turns]
     called = {re.match(r"[a-z_]+", call).group(0) for turn in outcome.turns for call in turn.tools}
     text = "\n".join(answers)
@@ -40,6 +44,7 @@ def grade(scenario: dict[str, Any], outcome: Any, customers: Iterable[Customer])
     missing_tools = [group for group in expected_tools if not set(group.split("|")) & called]
     facts = scenario.get("includes", [])
     facts_missing = [fact for fact in facts if not _found(fact, text)]
+    says_missing = [item for item in scenario.get("says", []) if not _found(item, text)]
     excluded_found = [item for item in scenario.get("excludes", []) if _found(item, text)]
 
     record: dict[str, Any] = {
@@ -49,9 +54,10 @@ def grade(scenario: dict[str, Any], outcome: Any, customers: Iterable[Customer])
         "missing_tools": missing_tools,
         "facts_total": len(facts),
         "facts_missing": facts_missing,
+        "says_missing": says_missing,
         "excluded_found": excluded_found,
         "leaks": leaks(text, customers),
-        "invented_delivered": invented_delivered(outcome.messages),
+        "invented_delivered": invented_delivered(outcome.messages) if invented is None else invented,
         "corrections": outcome.corrections,
         "other_script": bool(_OTHER_SCRIPT.search(text)),
         "tool_as_text": bool(_TOOL_AS_TEXT.search(text)),
@@ -66,6 +72,7 @@ def grade(scenario: dict[str, Any], outcome: Any, customers: Iterable[Customer])
     record["passed"] = not (
         missing_tools
         or facts_missing
+        or says_missing
         or excluded_found
         or record["leaks"]
         or record["invented_delivered"]
@@ -76,6 +83,23 @@ def grade(scenario: dict[str, Any], outcome: Any, customers: Iterable[Customer])
         or len(outcome.turns) < len(scenario["turns"])
     )
     return record
+
+
+def regrade(record: dict[str, Any], scenario: dict[str, Any], customers: Iterable[Customer]) -> dict[str, Any]:
+    """The stored answers and tool calls graded against the current expectations; usage and amounts stay as run."""
+    from run_scenarios import Outcome, Turn  # a sibling script, loaded the same way run_eval loads it
+
+    outcome = Outcome(
+        scenario=scenario,
+        turns=[Turn(turn["customer"], turn["tools"], turn["answer"]) for turn in record["turns"]],
+        error=record["error"],
+        corrections=record["corrections"],
+        seconds=record["seconds"],
+        usage={key: record[key] for key in ("calls", "input_tokens", "output_tokens", "cached_input_tokens",
+                                            "latencies")},
+    )
+    graded = grade(scenario, outcome, customers, invented=record["invented_delivered"])
+    return {**graded, **{key: record[key] for key in ("provider", "model", "rep") if key in record}}
 
 
 def leaks(text: str, customers: Iterable[Customer]) -> list[str]:
@@ -108,7 +132,10 @@ def _matches(expected: str, text: str) -> bool:
     if _MONEY.fullmatch(expected):
         wanted = parse_amount(expected)
         return any(parse_amount(number) == wanted for number in _NUMBER.findall(text))
-    return _plain(expected) in _plain(text)
+    plain = _plain(expected)
+    if len(plain) < 3:  # folding can erase symbols ("°C" became "c" and matched every answer)
+        return expected.lower() in text.lower()
+    return plain in _plain(text)
 
 
 def _plain(text: str) -> str:
@@ -247,6 +274,8 @@ def reasons(record: dict[str, Any]) -> list[str]:
         found.append("missing tool " + ", ".join(record["missing_tools"]))
     if record["facts_missing"]:
         found.append("missing " + ", ".join(f'"{fact}"' for fact in record["facts_missing"]))
+    if record.get("says_missing"):
+        found.append("did not say " + ", ".join(f'"{item}"' for item in record["says_missing"]))
     if record["excluded_found"]:
         found.append("said " + ", ".join(f'"{item}"' for item in record["excluded_found"]))
     for key, label in (
