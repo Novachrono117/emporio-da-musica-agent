@@ -1,0 +1,3 @@
+# Store data is kept byte for byte as provided (CRLF line endings included):
+# no line-ending normalisation, even where core.autocrlf is on.
+data/** -text

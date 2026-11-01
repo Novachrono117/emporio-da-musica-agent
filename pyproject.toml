@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "emporio-da-musica-agent"
+version = "0.1.0"
+description = "Customer service agent for Empório da Música, a fictional musical instrument store"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=2.3",      # Claude through the official SDK
+    "openai>=3.42",        # Gemini and Ollama through their OpenAI-compatible endpoints
+    "python-dotenv>=1.2",  # reads API keys and settings from .env, so no secret lives in code
+    "pypdf>=6.0",          # extracts the policy manual text from data/políticas_da_loja.pdf
+    "pyyaml>=6.0",         # evaluation golden set and pricing table are YAML files
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0",         # test runner
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

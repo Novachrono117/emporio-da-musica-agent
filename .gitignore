@@ -1,0 +1,18 @@
+# Secrets: API keys live only in .env (see .env.example)
+.env
+.env.*
+!.env.example
+
+# Case materials received by e-mail (not part of the public repository)
+*.zip
+desafio_tecnico_ai_eng_artefact.pdf
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Local run artifacts
+*.log
