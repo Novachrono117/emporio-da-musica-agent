@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
@@ -43,6 +43,7 @@ class ToolContext:
     tickets: TicketLog
     now: Callable[[], datetime] = agent_now  # store time (D-005, rule 7)
     failed_order_lookups: int = 0  # session state for get_order_status (D-005, rule 11)
+    seen_products: set[int] = field(default_factory=set)  # ids the catalog tools returned; quotes need one (D-008)
 
     def today(self) -> date:
         return self.now().date()

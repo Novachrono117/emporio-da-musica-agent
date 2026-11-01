@@ -35,6 +35,13 @@ def quote_payment(ctx: ToolContext, items: list[dict], method: str, installments
         quantities[item["product_id"]] = quantities.get(item["product_id"], 0) + item["quantity"]
     if installments is not None and not 1 <= installments <= MAX_INSTALLMENTS:
         raise ToolError("invalid_input", f"installments must be between 1 and {MAX_INSTALLMENTS}")
+    unseen = sorted(set(quantities) - ctx.seen_products)
+    if unseen:  # D-008: a guessed id could belong to another product
+        raise ToolError(
+            "unknown_product_id",
+            f"product id {', '.join(map(str, unseen))} was not returned by search_products or get_product_details in "
+            "this conversation; look the product up first and use the id it returns",
+        )
 
     lines, cash_price, promotional = [], Decimal("0"), Decimal("0")
     for product_id, quantity in quantities.items():

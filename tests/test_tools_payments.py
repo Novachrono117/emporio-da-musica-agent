@@ -5,7 +5,25 @@ from decimal import Decimal
 import pytest
 
 from emporio.tools.base import ToolError
+from emporio.tools.catalog import get_product_details, search_products
 from emporio.tools.payments import _max_installments, _plan, quote_payment
+
+
+@pytest.fixture(autouse=True)
+def looked_up(ctx, store):
+    """As if the catalog tools had returned every product: the id guard has its own tests."""
+    ctx.seen_products.update(product.id for product in store.list_products())
+
+
+def test_ids_must_come_from_a_lookup_in_the_session(ctx):
+    ctx.seen_products.clear()
+    with pytest.raises(ToolError) as error:
+        quote_payment(ctx, _items((95, 1), (102, 1)), "pix")
+    assert error.value.code == "unknown_product_id"
+    assert "95, 102" in error.value.message
+    search_products(ctx, query="Takamine GD20")
+    get_product_details(ctx, product_id=102)
+    assert quote_payment(ctx, _items((95, 1), (102, 1)), "pix")["cash_price"] == "R$ 6.098,00"
 
 
 def _money(text):
@@ -118,7 +136,7 @@ def test_repeated_products_are_merged(ctx):
         (_items((96, 1)), "not_for_sale"),  # out of stock
         (_items((113, 1)), "not_for_sale"),  # discontinued, no stock
         (_items((93, 3)), "insufficient_stock"),  # 2 in stock
-        (_items((1, 1)), "not_found"),
+        (_items((1, 1)), "unknown_product_id"),  # no lookup can return an id that does not exist
         ([], "invalid_input"),
         (_items((81, 0)), "invalid_input"),
     ],

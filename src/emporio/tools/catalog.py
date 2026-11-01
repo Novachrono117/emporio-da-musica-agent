@@ -75,7 +75,9 @@ def search_products(
     # Products whose name or category holds the words first, then the cheapest.
     rows.sort(key=lambda row: (-strong.get(row[0].id, 0), row[1] is None, row[1] or 0, row[0].name))
 
-    result: Result = {"total_matches": len(rows), "products": [_summary(ctx, product) for product, _ in rows[:limit]]}
+    shown = [product for product, _ in rows[:limit]]
+    ctx.seen_products.update(product.id for product in shown)
+    result: Result = {"total_matches": len(rows), "products": [_summary(ctx, product) for product in shown]}
     if query and _asks_for_accessory(_words(query)):
         result["accessory_note"] = (
             "The store sells instruments only, no strings, picks, cables, cases, pedals or amplifiers (sections 1 "
@@ -101,6 +103,7 @@ def get_product_details(ctx: ToolContext, product_id: int | None = None, name: s
         product = ctx.store.get_product(product_id)
         if product is None:
             raise ToolError("not_found", f"no product with id {product_id}")
+        ctx.seen_products.add(product.id)
         return {"product": _details(ctx, product)}
 
     words = _words(name)
@@ -113,7 +116,9 @@ def get_product_details(ctx: ToolContext, product_id: int | None = None, name: s
     if not matches:
         raise ToolError("not_found", "no product matches that name; try search_products")
     if len(matches) == 1 and best[0] == len(words):
+        ctx.seen_products.add(matches[0].id)
         return {"product": _details(ctx, matches[0])}
+    ctx.seen_products.update(product.id for product in matches[:CANDIDATES])
     return {
         "match": "ambiguous",
         "message": "Several products match: ask the customer which one, or call again with product_id.",
