@@ -60,7 +60,7 @@ class OpenAICompatClient:
             text=message.content or "",
             tool_calls=calls,
             stop_reason=STOP_REASONS.get(choice.finish_reason or "", choice.finish_reason or ""),
-            usage=Usage(usage.prompt_tokens, usage.completion_tokens, cached) if usage else Usage(),
+            usage=Usage(usage.prompt_tokens, _output_tokens(usage), cached) if usage else Usage(),
             # Without an id on every call, a replay could not match the tool results: rebuild instead.
             raw=message.model_dump(exclude_none=True) if all(call.id for call in calls) else None,
         )
@@ -98,6 +98,12 @@ def _arguments(text: str | None) -> dict[str, Any] | None:
     except json.JSONDecodeError:
         return None
     return value if isinstance(value, dict) else None
+
+
+def _output_tokens(usage: Any) -> int:
+    # Gemini leaves thinking out of completion_tokens and counts it only in total_tokens (checked on 2026-11-01); it
+    # is billed as output. Ollama's total is prompt plus completion, so this is completion_tokens there.
+    return max(usage.completion_tokens, (usage.total_tokens or 0) - usage.prompt_tokens)
 
 
 def _describe(provider: str, error: openai.APIError) -> str:

@@ -11,6 +11,7 @@ import httpx2
 import openai
 import pytest
 from anthropic.types import Message as AnthropicMessage
+from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletion
 
 from emporio.llm import create_client
@@ -178,12 +179,23 @@ def test_gemini_response_keeps_thought_signatures_and_flags_bad_arguments():
         ("get_store_policy", None),
     ]
     assert response.stop_reason == "tool_use"
-    assert (response.usage.input_tokens, response.usage.cached_input_tokens) == (900, 512)
+    assert (response.usage.input_tokens, response.usage.output_tokens, response.usage.cached_input_tokens) == (
+        900, 30, 512
+    )
     assert response.raw["tool_calls"][0]["extra_content"] == {"google": {"thought_signature": "ts-1"}}
     [request] = fake.chat.completions.requests
     assert request["messages"][0] == {"role": "system", "content": "system text"}
     assert "strict" not in json.dumps(request["tools"])
     assert request["tools"][0]["function"]["parameters"] == TOOLS[0]["input_schema"]
+
+
+def test_gemini_thinking_counts_as_output():
+    # Seen on 2026-11-01: thinking appears only in total_tokens, and Gemini bills it as output.
+    thinking_turn = GEMINI_TOOL_TURN.model_copy(
+        update={"usage": CompletionUsage(prompt_tokens=101, completion_tokens=29, total_tokens=1281)}
+    )
+    client = OpenAICompatClient("gemini", "m", "http://unused", "k", client=FakeOpenAI(thinking_turn))
+    assert client.complete("s", HISTORY[:1], TOOLS).usage.output_tokens == 1180
 
 
 def test_openai_compat_replays_its_own_turn_and_rebuilds_others():
