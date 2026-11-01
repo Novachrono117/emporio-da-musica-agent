@@ -92,3 +92,42 @@ trailer.
   English word in a Portuguese answer and sent the customer to the carrier about a late delivery instead of offering
   a person; Gemini offered a person, but used Markdown bold, which a terminal or WhatsApp shows as asterisks, and
   offered to place the order, which the agent cannot do.
+
+## Phase 4: behaviour
+
+- **Asked:** the persona, guardrails and out-of-scope handling, tested on the brief's four example questions. Vinicius
+  asked for more test conversations than those four: "testing more is never a problem".
+- **Produced by Claude Code:**
+  - a plan with five points (D-009): a Portuguese prompt, a fixed greeting, plain text, an amount check in code and
+    no new memory work;
+  - 39 test conversations in `eval/scenarios.yaml` (the brief's four plus catalog, promotions, payment, shipping,
+    orders and privacy, returns and warranty, hours, scope and prompt injection) and a runner that writes a
+    transcript per model to `eval/transcripts/`;
+  - the amount check: an answer that cites an amount in reais no tool returned is rewritten once, then replaced by
+    the fixed answer;
+  - four full runs on Qwen 2.5 7B and three on Gemini Flash-Lite, each transcript read by hand, with the changes
+    below between runs. The final transcripts are in `eval/transcripts/`; the first ones are in the git history.
+- **What the runs changed:**
+  - the first prompt spelled out every rule, and Qwen stopped calling tools: it invented an address, opening hours
+    and ticket numbers. A side-by-side run of the phase 3 prompt and the long one on five scenarios showed the
+    length was the cause. The prompt became shorter and tool-first, with a table that routes each kind of question
+    to its tool, and the situational rules moved into the tool results;
+  - the prompt now says whether the store is open and when it opens, without the clock time, so it stays cacheable;
+  - a search for an accessory returns only the note (listing seven-string guitars for "cordas" read as a yes);
+  - a product asked by name that is out of stock or coming soon is reported with its status instead of "not found"
+    (Gemini had told a customer the store did not have the Giannini GF-3D);
+  - a late order tells the agent to apologise and offer a person; a repeated identical order lookup no longer uses
+    up the customer's attempts (Gemini sent the same wrong pair three times in one turn);
+  - the prompt tells the model to say when a tool did not return a detail (Gemini called the C40 top "laminated")
+    and that the store sells no accessories.
+- **Reviewed or changed by Vinicius:** approved D-009 and asked for a broader test battery than the brief's examples,
+  which is what exposed the long prompt's effect on the small model.
+- **Outcome by model:** Gemini Flash-Lite handled the scenarios well from the first run (right tools, no invented
+  amount, no Markdown); it still describes the C40 top as laminated, from its own knowledge of the real guitar, since
+  the data does not say. Qwen 2.5 7B improved with the shorter prompt but stays unreliable from run to run: tool calls
+  written as text, answers drifting into Chinese or Russian, invented contacts, and once the card price given as the
+  Pix price. The amount check cannot catch that last case, because the amount did come from a tool. Measuring all
+  this is phase 5's job.
+- **Ollama context:** Ollama gives a 4,096-token context on GPUs under 24 GB, and its OpenAI-compatible API cannot
+  change it (a Modelfile or `OLLAMA_CONTEXT_LENGTH` can). The runs stayed under 3,000 input tokens, so nothing was
+  cut, but long conversations will reach the limit; the README must say how to raise it.
