@@ -134,7 +134,8 @@ eval/
 scripts/
   pricing.yaml             price per model with date and source link
   cost_report.py           tokens from eval logs x prices x volume scenarios -> docs/COSTS.md
-examples/                  3 to 5 conversations (.md)
+  run_examples.py          runs examples/conversations.yaml on the default model -> examples/*.md (D-011)
+examples/                  5 conversations (.md), their customer messages and a hand-written index (README.md)
 tests/
 ```
 

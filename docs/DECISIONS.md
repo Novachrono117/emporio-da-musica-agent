@@ -348,3 +348,32 @@ Each decision with its context, the options considered, the choice and the reaso
   of 4,096 tokens on GPUs under 24 GB: with thinking, input plus output reached exactly 4,096 tokens in some calls, so
   conversations were cut. Those runs were discarded (they stay in the git history) and rerun with 8,192; four of the
   new calls went past 4,096. Qwen 2.5 7B never passed 2,875 tokens, so its runs stand.
+
+## D-011: Example conversations and cost projection (phase 6)
+
+- **Status:** approved by Vinicius on 2026-11-01.
+- **Context:** the brief asks for 3 to 5 example conversations, at least one non-trivial, and the plan (section 10)
+  for a cost projection from measured tokens with dated prices.
+- **Example conversations:**
+  1. Five conversations, several customer messages each: guitars under R$ 1,000 and then the installments and Pix
+     price of one; a late order with verification and a hand-off; a regret request for an online purchase; a request
+     for strings, then for another customer's data; a defect after 30 days.
+  2. Each is one real run of the default model with the final code and a fixed store date, written to `examples/` by
+     `scripts/run_examples.py` from `examples/conversations.yaml`, with the tool calls and their results. No file is
+     edited by hand. A wrong answer stays, and `examples/README.md` says what went wrong: the evaluation already shows
+     the model fails 7% of scenario runs, and picking only good runs would hide it.
+- **Cost projection:**
+  1. Tokens per conversation come from `eval/results/`: a conversation is one scenario of the golden set (1 to 4
+     customer messages), reported as mean and p90 per model.
+  2. Prices go in `scripts/pricing.yaml` with the date and the link of the official page. Paid tier only: the free
+     tier is not for production with customer data.
+  3. Volumes of 30, 100 and 300 conversations a day over 30 days, in USD and in BRL at the Banco Central PTAX rate of a
+     stated date.
+  4. Caching: Gemini Flash-Lite reported no cached tokens in the evaluation. A second column projects the repeated
+     prefix (system prompt and tool definitions) at the cached price, labelled as a projection.
+  5. Claude Haiku 5.5 was not measured (no credit). Its tokens are counted with Anthropic's token counting endpoint if
+     the key allows it, otherwise Flash-Lite's measured tokens stand in, labelled. Its adaptive thinking adds output
+     tokens that cannot be measured here.
+  6. The local model is not free: a GPU virtual machine's monthly price from a named provider, with its date, and the
+     volume at which it breaks even with Flash-Lite. No local model met the bar of D-010.
+  7. `scripts/cost_report.py` does the arithmetic in `Decimal` and writes `docs/COSTS.md`; tests cover the arithmetic.
