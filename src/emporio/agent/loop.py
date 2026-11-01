@@ -5,6 +5,9 @@ answers in text. Up to 6 rounds of tools run per message; a seventh request is d
 answer that offers a person, without another model call. A refusal or an empty answer gets the same message. Tool
 errors go back to the model as data. If the provider fails, the customer's message is taken out of the history, so
 the session stays valid, and the error goes up to the caller.
+
+An answer that cites an amount in reais no tool returned is discarded, and the model gets one more call with a
+reminder in its system prompt; a second miss gets the fixed answer (D-009).
 """
 
 from __future__ import annotations
@@ -14,8 +17,9 @@ import logging
 import time
 from collections.abc import Callable
 
+from emporio.agent.guards import unsupported_amounts
 from emporio.agent.memory import Session
-from emporio.agent.prompts import system_prompt
+from emporio.agent.prompts import AMOUNT_REMINDER, system_prompt
 from emporio.agent.usage import UsageLog
 from emporio.company import CONTACTS
 from emporio.llm.base import LLMClient, LLMError, LLMResponse, Message, ToolCall
@@ -65,15 +69,26 @@ class Agent:
 
     def _answer(self, messages: list[Message]) -> str:
         tools = tool_definitions()
-        for round_number in range(MAX_TOOL_ROUNDS + 1):
-            response = self._complete(messages, tools)
+        tool_rounds = 0
+        reminder = ""
+        while True:
+            response = self._complete(messages, tools, reminder)
             if response.stop_reason == "refusal" or not (response.tool_calls or response.text.strip()):
                 return self._fallback(messages)
             if not response.tool_calls:
-                messages.append(response.as_message(self.llm.provider))
-                return response.text
-            if round_number == MAX_TOOL_ROUNDS:
+                unsupported = unsupported_amounts(response.text, messages)
+                if not unsupported:
+                    messages.append(response.as_message(self.llm.provider))
+                    return response.text
+                if self.usage:
+                    self.usage.event(self.session.id, "unsupported_amount", amounts=unsupported, retry=not reminder)
+                if reminder:
+                    return self._fallback(messages)
+                reminder = AMOUNT_REMINDER.format(amounts=", ".join(unsupported))
+                continue  # the answer is discarded; the history does not change
+            if tool_rounds == MAX_TOOL_ROUNDS:
                 return self._fallback(messages)  # the seventh round is dropped: no call is left without a result
+            tool_rounds += 1
             messages.append(response.as_message(self.llm.provider))
             for call in response.tool_calls:
                 result = self._run(call)
@@ -85,11 +100,10 @@ class Agent:
                         "content": json.dumps(result, ensure_ascii=False),
                     }
                 )
-        raise AssertionError("unreachable")
 
-    def _complete(self, messages: list[Message], tools: list[dict]) -> LLMResponse:
+    def _complete(self, messages: list[Message], tools: list[dict], reminder: str = "") -> LLMResponse:
         started = time.perf_counter()
-        response = self.llm.complete(system_prompt(self.ctx.today()), messages, tools)
+        response = self.llm.complete(system_prompt(self.ctx.today()) + reminder, messages, tools)
         if self.usage:
             self.usage.record(
                 self.session.id, self.llm.provider, self.llm.model, response, time.perf_counter() - started

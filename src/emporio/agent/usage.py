@@ -34,6 +34,20 @@ class UsageLog:
             "stop_reason": response.stop_reason,
             "tools": [call.name for call in response.tool_calls],
         }
+        self._append(entry)
+
+    def event(self, session_id: str, name: str, **details: Any) -> None:
+        """A guard firing, for example (D-009); details hold amounts or flags, never conversation text."""
+        self._append(
+            {
+                "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "session_id": session_id,
+                "event": name,
+                **details,
+            }
+        )
+
+    def _append(self, entry: dict[str, Any]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.path.open("a", encoding="utf-8") as file:
-            file.write(json.dumps(entry) + "\n")
+            file.write(json.dumps(entry, ensure_ascii=False) + "\n")
