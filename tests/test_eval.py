@@ -171,6 +171,8 @@ def test_report_applies_rule_4_when_no_model_qualifies():
 def test_runner_resumes_and_writes_the_report(tmp_path, monkeypatch):
     monkeypatch.setattr(run_eval, "RESULTS", tmp_path / "results")
     monkeypatch.setattr(run_eval, "REPORT", tmp_path / "EVAL.md")
+    monkeypatch.setattr(run_eval, "NOTES", tmp_path / "notes.md")
+    (tmp_path / "notes.md").write_text("## Notes\n\nRead by hand.\n", encoding="utf-8")
     monkeypatch.setattr(run_eval, "load_dotenv", lambda *a, **k: None)
     llm = ScriptedLLM(tools(("search_products", {"query": "Takamine GD20"})), text("Custa R$ 2.199,00."))
     monkeypatch.setattr(run_eval, "create_client", lambda provider, model: llm)
@@ -179,7 +181,8 @@ def test_runner_resumes_and_writes_the_report(tmp_path, monkeypatch):
     assert run_eval.main(["--provider", "ollama", "--only", "brief_takamine_price"]) == 0
     [record] = run_eval.read_records(tmp_path / "results" / "scripted-scripted-1.jsonl")
     assert record["passed"] and record["rep"] == 1
-    assert "partial: not ranked" in (tmp_path / "EVAL.md").read_text(encoding="utf-8")
+    report = (tmp_path / "EVAL.md").read_text(encoding="utf-8")
+    assert "partial: not ranked" in report and report.endswith("Read by hand.\n")
     # Resuming skips the finished scenario run: no model call is made.
     assert run_eval.main(["--provider", "ollama", "--only", "brief_takamine_price"]) == 0
     assert len(llm.calls) == 2

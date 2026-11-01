@@ -36,6 +36,7 @@ from emporio.llm.base import LLMError
 
 RESULTS = ROOT / "eval" / "results"
 REPORT = ROOT / "docs" / "EVAL.md"
+NOTES = ROOT / "eval" / "report_notes.md"  # written by hand after reading the failures; appended to the report
 MAX_ERRORS_IN_A_ROW = 3
 
 
@@ -64,7 +65,10 @@ def write_report(scenario_count: int) -> Path:
             if not record["passed"]:
                 detail[record["scenario"]] += grading.reasons(record)
         failures[name] = dict(detail)
-    REPORT.write_text(grading.render_report(models, failures), encoding="utf-8")
+    report = grading.render_report(models, failures)
+    if NOTES.exists():
+        report += "\n" + NOTES.read_text(encoding="utf-8")
+    REPORT.write_text(report, encoding="utf-8")
     return REPORT
 
 
