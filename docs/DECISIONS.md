@@ -341,6 +341,8 @@ Each decision with its context, the options considered, the choice and the reaso
      out-of-stock guitar, and so rejected "não temos esse modelo exato disponível no momento... está esgotado
      temporariamente" (Flash-Lite). It now excludes what that wrong answer would say ("não vend", "não trabalha",
      "não comercializ"); the answer must still say the product is out of stock.
+- **Result (2026-11-01, `docs/EVAL.md`):** no model met rule 2. By rule 4 the default is Gemini 3.5 Flash-Lite
+  (93% of scenario runs, every expected tool, 98% of the facts); the README says it did not meet the bar.
 - **Local models:** Qwen 3.5 runs with its default thinking mode on (Ollama's default for the model), on an Ollama
   server with an 8,192-token context (`OLLAMA_CONTEXT_LENGTH=8192`). The first Qwen 3.5 4B runs used Ollama's default
   of 4,096 tokens on GPUs under 24 GB: with thinking, input plus output reached exactly 4,096 tokens in some calls, so

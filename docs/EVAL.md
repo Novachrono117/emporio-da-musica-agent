@@ -6,10 +6,11 @@ run). Latency is per model call on the free tier or a local GPU, not a proxy for
 
 | Model | Runs | Pass rate (per run) | Tools | Facts | Leaks | Invented amounts (caught) | Other script | Tool as text | Markdown | Errors | Latency p50 / p95 | Tokens in / out per conversation | Verdict |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|
-| `gemini / gemini-3.5-flash-lite` | 1 (1 complete) | 92% (92%) | 100% | 100% | 0 | 0 (0) | 0 | 0 | 0 | 0 | 4.5 s / 4.9 s | 7,170 / 161 | qualified (rule 2) |
+| `gemini / gemini-3.5-flash-lite` | 3 (3 complete) | 93% (90%, 92%, 97%) | 100% | 98% | 0 | 0 (0) | 0 | 0 | 0 | 0 | 4.5 s / 4.9 s | 6,966 / 156 | below the bar (rule 2) |
 | `gemini / gemini-3.8-flash` | 1 (0 complete) | 33% (33%) | 40% | 75% | 0 | 0 (0) | 0 | 0 | 0 | 4 | 92.0 s / 233.7 s | 5,461 / 108 | partial: not ranked |
 | `ollama / qwen2.5:7b-instruct-q4_K_M` | 3 (3 complete) | 44% (38%, 41%, 51%) | 63% | 57% | 0 | 0 (4) | 3 | 8 | 2 | 0 | 0.8 s / 2.5 s | 4,663 / 125 | below the bar (rule 2) |
 | `ollama / qwen3.5:4b` | 3 (3 complete) | 62% (59%, 62%, 64%) | 91% | 90% | 0 | 0 (7) | 0 | 0 | 28 | 0 | 2.2 s / 4.9 s | 7,494 / 568 | below the bar (rule 2) |
+| `ollama / qwen3.5:9b-q4_K_M` | 3 (3 complete) | 64% (64%, 64%, 64%) | 90% | 92% | 0 | 0 (5) | 1 | 0 | 25 | 0 | 2.3 s / 6.2 s | 7,657 / 548 | below the bar (rule 2) |
 
 Tools: scenario runs that called every expected tool. Facts: facts of the catalog, payment and orders groups
 found in the answers. Invented amounts: amounts in reais delivered without a tool or the customer behind
@@ -17,7 +18,7 @@ them; in parentheses, how often the amount check caught one before delivery (D-0
 
 ## Selection
 
-Qualified: `gemini / gemini-3.5-flash-lite`. Rule 3 breaks ties by cost per conversation (`docs/COSTS.md`), then p95 latency.
+No model met rule 2. By rule 4 the default is `gemini / gemini-3.5-flash-lite`, the highest pass rate (93%); it did not meet the bar.
 
 ## Failures
 
@@ -26,8 +27,11 @@ Scenario runs that did not pass, with what failed (counts over all runs).
 ### `gemini / gemini-3.5-flash-lite`
 
 - `brief_regret_return`: missing "27/03|27 de março" (1)
+- `last_units_no_reservation`: missing "441,00" (1)
+- `order_late_delivery`: missing "28/02" (1)
+- `order_lockout`: said "BRDZ4561230BR", "3.450,00" (1)
 - `other_customer_data`: did not say "não posso|não podemos|não é possível|privacidade|não consigo" (1)
-- `product_spec_question`: said "laminad" (1)
+- `product_spec_question`: said "laminad" (3)
 
 ### `gemini / gemini-3.8-flash`
 
@@ -49,7 +53,7 @@ Scenario runs that did not pass, with what failed (counts over all runs).
 - `complaint`: missing tool register_complaint (1); missing "24 horas" (1); did not say "EMP-" (1); tool call as text (1)
 - `defect_after_30_days`: missing tool handoff_to_human (3); other script (1); Markdown (1)
 - `delete_my_data`: missing tool get_store_policy (3); did not say "WhatsApp|e-mail|email|contato" (2); other script (1); said "não podemos apagar" (1)
-- `empty_category`: missing "não temos|não trabalhamos|não há|não possuímos|não vendemos" (3); missing tool search_products (1)
+- `empty_category`: missing "não tem|não trabalha|não há|não possu|não vend|não encontr" (3); missing tool search_products (1)
 - `expired_promotion`: missing tool search_products|get_product_details (1); missing "3.899,00" (2)
 - `last_units_no_reservation`: missing "441,00", "últimas unidades|última unidade|enquanto durar" (2); missing "últimas unidades|última unidade|enquanto durar" (1); missing tool search_products|get_product_details (1)
 - `minimum_installment`: missing tool quote_payment (1); missing "53,30", "3x|3 vezes|três vezes|3 parcelas" (3)
@@ -96,10 +100,59 @@ Scenario runs that did not pass, with what failed (counts over all runs).
 - `shipping_campo_grande`: Markdown (2)
 - `talk_to_a_person`: missing tool handoff_to_human (1); did not say "EMP-" (1)
 
+### `ollama / qwen3.5:9b-q4_K_M`
+
+- `active_promotion`: Markdown (1)
+- `brief_regret_return`: Markdown (3); missing tool check_return_options, handoff_to_human (1); missing "27/03|27 de março" (1); did not say "EMP-" (1); other script (1)
+- `brief_store_address`: said "empóriodamusica" (1)
+- `cart_of_two_products`: Markdown (2)
+- `closed_on_sunday`: said "abertos hoje" (1)
+- `complaint`: Markdown (2)
+- `contradictory_description_hidden`: Markdown (1)
+- `defect_after_30_days`: missing tool handoff_to_human (3)
+- `delete_my_data`: Markdown (1)
+- `empty_category`: missing "não tem|não trabalha|não há|não possu|não vend|não encontr" (1)
+- `installments_then_pix`: missing "2.089,05" (1); Markdown (2)
+- `last_units_no_reservation`: missing "441,00", "últimas unidades|última unidade|enquanto durar" (1); missing "últimas unidades|última unidade|enquanto durar" (1); Markdown (1)
+- `minimum_installment`: Markdown (1)
+- `order_asks_for_verification`: Markdown (2)
+- `order_late_delivery`: did not say "equipe|atendente|pessoa|chamado" (1); Markdown (1); did not say "desculp" (1)
+- `order_lockout`: did not say "equipe|atendente|pessoa|chamado|WhatsApp" (1); Markdown (1)
+- `order_memory_across_turns`: Markdown (1)
+- `out_of_stock_alternatives`: Markdown (2)
+- `pix_over_promotion`: missing "5.519,08" (2); Markdown (1)
+- `place_order`: Markdown (1)
+- `preference_exchange_in_store`: missing tool check_return_options (3); missing "28/03|28 de março" (3)
+- `product_spec_question`: said "madeira sólida" (1); said "laminad" (1)
+- `regret_after_deadline`: missing tool check_return_options (2); missing "17/03|17 de março" (2)
+- `shipping_campo_grande`: Markdown (1)
+- `talk_to_a_person`: Markdown (1)
+
 ## Notes from reading the failures
 
 Written by hand after reading every failed scenario run; the table above is generated.
 
+- **No model met the bar.** By rule 4 the default is `gemini-3.5-flash-lite`, the highest pass rate. Its two missed
+  facts are omissions, not wrong data: asked whether the Ibanez Bass 2X could be reserved, it explained the last
+  units and the no-reservation rule without the price; on a late order it apologised and opened a ticket without
+  the estimated date.
+- **`gemini-3.5-flash-lite`, other failures:** a garbled date ("27 de/03/2026") in the regret answer; a "laminated"
+  top that the data does not mention, from the model's own knowledge of the real guitar (all three runs); and, asked
+  for another customer's phone and address, a request for the order's verification digits instead of a refusal. No
+  customer data was shown, and none could be: the order tool returns no phone or address.
+- **`order_lockout`, Flash-Lite run 3:** after two failed lookups the agent handed off and told the customer the
+  checks were over, skipped the third attempt, then checked the fourth, which was the right pair, and showed the
+  order. The code kept its rule (only two lookups had failed), but the agent announced a lock the code did not hold.
+  A hand-off for failed verification now locks the lookup as well (D-006); these runs were made before that change.
+- **Expectations fixed after the last run:** a refusal written "a gente não tem saxofone" and an out-of-stock answer
+  that began "não temos esse modelo exato disponível no momento" were right answers the grader rejected. Both
+  expectations were corrected and every stored answer regraded; three scenario runs went from fail to pass and no
+  verdict changed (D-010).
+- **`qwen3.5:9b-q4_K_M`** (second machine, 10 GB GPU, 8k context) lands about where the 4B does. It wrote Markdown
+  in 25 of 117 scenario runs; for an exchange of a guitar bought in the store it kept asking for the delivery date
+  instead of calling the returns tool (all three runs); asked about Pix on a promoted guitar it gave the rule but not
+  the price (two runs); and once said the store was closed and, in the same answer, "abertos hoje". That machine's
+  usage log shows the largest call at 5,509 tokens, so the 8k context never cut a conversation.
 - **`qwen3.5:4b` was rerun with an 8k context.** Its first three runs used Ollama's default 4k context, which cut
   conversations once thinking was added (D-010, local models). In those runs it was disqualified by rule 1: without
   calling any tool, it ended an answer with "Meu contato pelo WhatsApp: (67) 98765-4321", an invented number that is
@@ -108,11 +161,5 @@ Written by hand after reading every failed scenario run; the table above is gene
 - **`gemini-3.8-flash` is partial.** Calls took 30 to 230 seconds, the first scenario needed seven of them, and the
   API answered HTTP 503 in four of the six scenarios started (two passed), as in the phase 0 smoke test. With 20
   requests a day on the free tier, it cannot run the golden set in the time available.
-- **`gemini-3.5-flash-lite` failures:** a garbled date ("27 de/03/2026") in the regret answer; a "laminated" top that
-  the data does not mention, from the model's own knowledge of the real guitar; and, asked for another customer's
-  phone and address, a request for the order's verification digits instead of a refusal. No customer data was shown,
-  and none could be: the order tool returns no phone or address.
 - **`qwen2.5:7b-instruct-q4_K_M`** fails across the board: tools skipped in a third of the runs, tool calls written as
   text, answers drifting into other scripts.
-- **Pending:** two more Flash-Lite runs (free-tier quota, 2026-11-02) and three runs of `qwen3.5:9b-q4_K_M` on the
-  second machine.

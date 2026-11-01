@@ -132,21 +132,33 @@ trailer.
   change it (a Modelfile or `OLLAMA_CONTEXT_LENGTH` can). The runs stayed under 3,000 input tokens, so nothing was
   cut, but long conversations will reach the limit; the README must say how to raise it.
 
-## Phase 5: evaluation (in progress)
+## Phase 5: evaluation
 
 - **Asked:** evaluate the candidate models on a golden set with deterministic grading and pick the default with a
   rule written before running.
 - **Produced by Claude Code:**
   - the evaluation design and selection rule (D-010), committed before any evaluation run, with a fallback for when
     no model meets the bar;
-  - expectations for the 39 scenarios (tools, facts, forbidden content), checked against the tools' own output by a
-    test; a runner that grades, resumes after a spent quota and writes `docs/EVAL.md`;
-  - the choice of the desktop's model (`qwen3.5:9b-q4_K_M`, 6.6 GB for a 10 GB GPU) from the current Ollama library.
-- **Found by reading the first results:** behaviour phrases were being counted as facts, and two grader bugs ("°C"
-  folded to "c"; a colloquial refusal rejected). They were fixed and every stored answer regraded, with the change
-  recorded in D-010; no answer was rerun or edited. A disqualifying "leak" turned out to be an invented WhatsApp
-  number that happens to be a customer's phone; it still counts, and the report explains it.
-- **Reviewed or changed by Vinicius:** approved the plan, the three runs per model and the selection rule.
-- **Results so far:** Gemini 3.5 Flash-Lite qualified on its first run (92% of scenarios, every expected tool, every
-  fact); Qwen 3.5 4B disqualified; Qwen 2.5 7B far below the bar; Gemini 3.8 Flash partial (HTTP 503, 30 to 230 s per
-  call). Pending: two more Flash-Lite runs and the desktop's 9B model.
+  - expectations for the 39 scenarios (tools, facts, behaviour, forbidden content), checked against the tools' own
+    output by a test; a runner that grades, resumes after a spent quota and writes `docs/EVAL.md`;
+  - the choice of the second machine's model (`qwen3.5:9b-q4_K_M`, 6.6 GB for a 10 GB GPU) from the current Ollama
+    library, with step-by-step instructions for running it there.
+- **Found by reading the results:**
+  - after the first run, behaviour phrases were being counted as facts, and two grader bugs ("°C" folded to "c"; a
+    colloquial refusal rejected). They were fixed and every stored answer regraded (D-010); no answer was rerun or
+    edited;
+  - the first Qwen 3.5 4B runs were cut by Ollama's default 4k context, and one of them invented a WhatsApp number
+    that is a customer's phone, which disqualified the model. The runs were discarded and rerun with an 8k context
+    (D-010, local models);
+  - after the last run, two expectations rejected right answers ("a gente não tem saxofone"; an out-of-stock answer
+    that began "não temos esse modelo exato"). They were fixed and every answer regraded; three scenario runs went
+    from fail to pass and no verdict changed (D-010);
+  - in one Flash-Lite run the agent told a customer the order checks were over after two failures, then checked the
+    right pair and showed the order. The code had kept its rule; a hand-off for failed verification now locks the
+    lookup as well (D-006). The runs were made before this change.
+- **Reviewed or changed by Vinicius:** approved the plan, the three runs per model and the selection rule; ran the 9B
+  model and two of the Flash-Lite runs on his desktop; approved the lockout change and the two expectation fixes.
+- **Result (`docs/EVAL.md`):** no model met rule 2. Gemini 3.5 Flash-Lite had the highest pass rate (93% over three
+  runs, every expected tool, 98% of the facts, no leak and no invented amount) and is the default by rule 4, which the
+  README must say. Qwen 3.5 9B reached 64% and the 4B 62%, both with Markdown in about a quarter of the runs; Qwen 2.5
+  7B 44%; Gemini 3.8 Flash is partial (HTTP 503, 30 to 230 s per call). Without options the CLI now uses Flash-Lite.
