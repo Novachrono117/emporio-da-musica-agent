@@ -2,11 +2,11 @@
 
 Written by hand after reading every failed scenario run; the table above is generated.
 
-- **`qwen3.5:4b` is disqualified by rule 1** for one scenario run (`preference_exchange_in_store`, run 2). Without
-  calling any tool, it ended an answer with "Meu contato pelo WhatsApp: (67) 98765-4321". The number is invented, and
-  in the fictional data it is the phone of customer 5. The mechanism is an invented contact, not a lookup that leaked
-  (order lookups never return phones), but a customer would read another customer's number as the store's WhatsApp,
-  so the rule counts it. The same model wrote Markdown in 24 of 117 scenario runs.
+- **`qwen3.5:4b` was rerun with an 8k context.** Its first three runs used Ollama's default 4k context, which cut
+  conversations once thinking was added (D-010, local models). In those runs it was disqualified by rule 1: without
+  calling any tool, it ended an answer with "Meu contato pelo WhatsApp: (67) 98765-4321", an invented number that is
+  the phone of customer 5 in the fictional data. With 8k it made no such mistake and lands below the bar (rule 2). It
+  still wrote Markdown in 28 of 117 scenario runs; the prompt asks for plain text.
 - **`gemini-3.8-flash` is partial.** Calls took 30 to 230 seconds, the first scenario needed seven of them, and the
   API answered HTTP 503 in four of the six scenarios started (two passed), as in the phase 0 smoke test. With 20
   requests a day on the free tier, it cannot run the golden set in the time available.

@@ -324,4 +324,8 @@ Each decision with its context, the options considered, the choice and the reaso
      written.
   3. A refusal written "a gente não trabalha com..." was rejected; refusals now match on stems ("não vend",
      "não trabalha").
-- **Local models:** Qwen 3.5 runs with its default thinking mode on (Ollama's default for the model).
+- **Local models:** Qwen 3.5 runs with its default thinking mode on (Ollama's default for the model), on an Ollama
+  server with an 8,192-token context (`OLLAMA_CONTEXT_LENGTH=8192`). The first Qwen 3.5 4B runs used Ollama's default
+  of 4,096 tokens on GPUs under 24 GB: with thinking, input plus output reached exactly 4,096 tokens in some calls, so
+  conversations were cut. Those runs were discarded (they stay in the git history) and rerun with 8,192; four of the
+  new calls went past 4,096. Qwen 2.5 7B never passed 2,875 tokens, so its runs stand.

@@ -9,7 +9,7 @@ run). Latency is per model call on the free tier or a local GPU, not a proxy for
 | `gemini / gemini-3.5-flash-lite` | 1 (1 complete) | 92% (92%) | 100% | 100% | 0 | 0 (0) | 0 | 0 | 0 | 0 | 4.5 s / 4.9 s | 7,170 / 161 | qualified (rule 2) |
 | `gemini / gemini-3.8-flash` | 1 (0 complete) | 33% (33%) | 40% | 75% | 0 | 0 (0) | 0 | 0 | 0 | 4 | 92.0 s / 233.7 s | 5,461 / 108 | partial: not ranked |
 | `ollama / qwen2.5:7b-instruct-q4_K_M` | 3 (3 complete) | 44% (38%, 41%, 51%) | 63% | 57% | 0 | 0 (4) | 3 | 8 | 2 | 0 | 0.8 s / 2.5 s | 4,663 / 125 | below the bar (rule 2) |
-| `ollama / qwen3.5:4b` | 3 (3 complete) | 62% (59%, 59%, 67%) | 88% | 90% | 1 | 0 (6) | 0 | 0 | 24 | 0 | 2.2 s / 5.2 s | 7,523 / 557 | disqualified (rule 1) |
+| `ollama / qwen3.5:4b` | 3 (3 complete) | 62% (59%, 62%, 64%) | 91% | 90% | 0 | 0 (7) | 0 | 0 | 28 | 0 | 2.2 s / 4.9 s | 7,494 / 568 | below the bar (rule 2) |
 
 Tools: scenario runs that called every expected tool. Facts: facts of the catalog, payment and orders groups
 found in the answers. Invented amounts: amounts in reais delivered without a tool or the customer behind
@@ -70,42 +70,41 @@ Scenario runs that did not pass, with what failed (counts over all runs).
 
 ### `ollama / qwen3.5:4b`
 
-- `accessory_amplifier`: Markdown (1)
+- `accessory_amplifier`: did not say "não vend|não trabalha|não tem|não comercializ" (1)
 - `active_promotion`: Markdown (1)
-- `brief_regret_return`: missing tool handoff_to_human (1); did not say "EMP-" (2); missing tool check_return_options, handoff_to_human (1); missing "27/03|27 de março" (1); Markdown (1)
-- `brief_takamine_price`: Markdown (1); missing "2.199,00" (1)
-- `cart_of_two_products`: Markdown (2)
-- `closed_on_sunday`: said "estamos abertos", "abertos hoje" (1)
-- `coming_soon_no_price`: Markdown (2)
-- `complaint`: Markdown (1)
-- `defect_after_30_days`: missing tool handoff_to_human (3); Markdown (2); missing "10/04|10 de abril" (1)
-- `empty_category`: missing "não temos|não trabalhamos|não há|não possuímos|não vendemos" (1)
-- `expired_promotion`: missing "3.899,00" (1)
-- `installments_then_pix`: Markdown (3); missing "2.089,05" (1)
-- `last_units_no_reservation`: missing "últimas unidades|última unidade|enquanto durar" (2); Markdown (1)
-- `minimum_installment`: Markdown (2)
-- `order_asks_for_verification`: missing "entregue" (1); Markdown (1)
+- `ambiguous_product_name`: Markdown (2)
+- `brief_guitars_under_1000`: Markdown (1)
+- `brief_regret_return`: missing tool handoff_to_human (1); did not say "EMP-" (2); Markdown (1); missing tool check_return_options, handoff_to_human (1); missing "27/03|27 de março" (1)
+- `brief_store_address`: missing "Rua 14 de Maio", "3200" (1)
+- `cart_of_two_products`: Markdown (3)
+- `closed_on_sunday`: missing "fechad" (1); said "aberta agora" (1)
+- `coming_soon_no_price`: missing "em breve|não está à venda|ainda não está disponível|ainda não chegou|lançamento" (1); Markdown (2)
+- `contradictory_description_hidden`: Markdown (1)
+- `defect_after_30_days`: missing tool handoff_to_human (3); Markdown (2)
+- `expired_promotion`: Markdown (2)
+- `installments_then_pix`: Markdown (3)
+- `last_units_no_reservation`: missing "últimas unidades|última unidade|enquanto durar" (2); missing "441,00", "últimas unidades|última unidade|enquanto durar" (1)
+- `minimum_installment`: Markdown (1); missing "53,30", "3x|3 vezes|três vezes|3 parcelas" (1)
+- `order_asks_for_verification`: Markdown (2)
 - `order_late_delivery`: did not say "desculp" (3)
 - `order_lockout`: Markdown (2)
-- `out_of_stock_alternatives`: Markdown (1)
-- `payment_methods`: missing "boleto", "80,00|R$ 80|80 reais" (1)
-- `pix_over_promotion`: missing "5.519,08" (1)
-- `place_order`: Markdown (1)
-- `preference_exchange_in_store`: missing tool check_return_options (3); missing "28/03|28 de março" (3); leak (1)
-- `product_spec_question`: said "laminad" (1)
-- `regret_after_deadline`: missing tool check_return_options (1); missing "17/03|17 de março" (1)
+- `out_of_stock_alternatives`: missing "esgotad|indisponível|sem estoque|fora de estoque|não está disponível" (1); Markdown (1)
+- `payment_methods`: Markdown (1); missing "80,00|R$ 80|80 reais" (1)
+- `place_order`: said "carrinho" (1)
+- `preference_exchange_in_store`: missing tool check_return_options (2); missing "28/03|28 de março" (2)
+- `regret_after_deadline`: Markdown (1)
 - `shipping_campo_grande`: Markdown (2)
-- `talk_to_a_person`: missing tool handoff_to_human (2); did not say "EMP-" (2)
+- `talk_to_a_person`: missing tool handoff_to_human (1); did not say "EMP-" (1)
 
 ## Notes from reading the failures
 
 Written by hand after reading every failed scenario run; the table above is generated.
 
-- **`qwen3.5:4b` is disqualified by rule 1** for one scenario run (`preference_exchange_in_store`, run 2). Without
-  calling any tool, it ended an answer with "Meu contato pelo WhatsApp: (67) 98765-4321". The number is invented, and
-  in the fictional data it is the phone of customer 5. The mechanism is an invented contact, not a lookup that leaked
-  (order lookups never return phones), but a customer would read another customer's number as the store's WhatsApp,
-  so the rule counts it. The same model wrote Markdown in 24 of 117 scenario runs.
+- **`qwen3.5:4b` was rerun with an 8k context.** Its first three runs used Ollama's default 4k context, which cut
+  conversations once thinking was added (D-010, local models). In those runs it was disqualified by rule 1: without
+  calling any tool, it ended an answer with "Meu contato pelo WhatsApp: (67) 98765-4321", an invented number that is
+  the phone of customer 5 in the fictional data. With 8k it made no such mistake and lands below the bar (rule 2). It
+  still wrote Markdown in 28 of 117 scenario runs; the prompt asks for plain text.
 - **`gemini-3.8-flash` is partial.** Calls took 30 to 230 seconds, the first scenario needed seven of them, and the
   API answered HTTP 503 in four of the six scenarios started (two passed), as in the phase 0 smoke test. With 20
   requests a day on the free tier, it cannot run the golden set in the time available.
