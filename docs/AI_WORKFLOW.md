@@ -46,3 +46,24 @@ trailer.
     units, order lookup, catalog gaps) and added four (LGPD and the Gemini free tier, binding offers, virtual assistant
     disclosure, complaint deadline).
 - **Caught by tests:** a test assumed the wrong price for product 81; it was corrected against the CSV.
+
+## Phase 2: tools
+
+- **Asked:** build the tools of the plan (section 7), following the business rules approved in D-005.
+- **Produced by Claude Code:**
+  - a proposal (D-006) after checking the plan's seven tools against D-005: the rules needed date arithmetic for
+    returns and warranty, a record of regret requests and contact data that resolves the manual's conflicts, none of
+    which the plan covered; the proposal also checked which JSON Schema keywords Claude's strict tool use accepts;
+  - eight tools with hand-written schemas, a small validator, company data and hours checked against the manual's
+    text, a local ticket log kept out of git, and 157 tests;
+  - one request per provider with all eight schemas: Ollama (Qwen 2.5 7B) and Gemini Flash-Lite both accepted them.
+    Gemini searched before quoting; Qwen called `quote_payment` with product ids it made up, so the tool description
+    now says where ids come from, and phases 3 and 4 have to handle it.
+- **Reviewed or changed by Vinicius:** asked whether the proposal was really the most adequate plan. Re-checking it
+  changed two points before he approved it: `quote_payment` takes the cart items instead of a free amount (the model
+  never adds up prices or quotes an invented value), and `check_return_options` says "within the deadline" with the
+  conditions a person checks, instead of "eligible", which would bind the store.
+- **Found in the data:** product 130 is coming soon but appears in two orders, and seven products between 135 and
+  144 have descriptions that name another brand or model (`docs/DATA_NOTES.md`).
+- **Caught before running:** two phone endings in the first draft of the order tests were wrong; they were corrected
+  against the CSV.
