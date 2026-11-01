@@ -91,6 +91,22 @@ approved on 2026-11-01, several of them revised after a check against consumer l
   and `hardware`.
 - Products: 62 `active`, 2 `discontinued`, 1 `coming_soon`. Product 96 is active with no stock, 113 is discontinued
   with no stock, 136 is discontinued with 13 units, and 130 is coming soon with 2 units.
+- Product 130 is coming soon, yet it appears in delivered order 3 and pending order 14. Orders are shown as recorded
+  (D-005, rule 8) and the product is not quoted while it is coming soon (rule 10). Found in phase 2.
+- Products 135 to 144 have generic names (for example "Music Man Bass 1X Electric Bass"). In seven of them the
+  description names another brand or model, and some contradict the specs too (found in phase 2):
+
+  | Product | Name says | Description says |
+  |---|---|---|
+  | 135 | Music Man bass | Fender Jazz Bass, alder body (specs: ash) |
+  | 136 | Ibanez bass | Precision bass |
+  | 137 | Yamaha bass | Ibanez, 5 strings (specs: 4) |
+  | 139 | Yamaha drum kit | Pearl Export, poplar and mahogany shells (specs: maple) |
+  | 140 | Pearl drum kit | Tama, birch shells (specs: maple) |
+  | 142 | Korg synthesizer | Roland workstation, 88 keys (specs: 61) |
+  | 144 | Roland synthesizer | Yamaha arranger keyboard |
+
+  Products 138, 141 and 143 agree with their names.
 - Customers: names are unique; every phone follows `(NN) NNNNN-NNNN`; **two customers share one e-mail address**, so a
   customer is never identified by e-mail.
 - Orders: 4 `pending`, 4 `confirmed`, 1 `shipped`, 7 `delivered`, 4 `cancelled`. Only shipped and delivered orders
