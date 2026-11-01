@@ -25,3 +25,24 @@ trailer.
 - **Done by Vinicius:** approved creating the private GitHub repository; created the `.env` keys himself (they never
   went through the chat). Claude was not tested because there is no API credit available at the moment.
 - **Reviewed or changed by Vinicius:** pending.
+
+## Phase 1: data
+
+- **Asked:** load and clean the store data and the policy manual, with the simplest design that can still grow later.
+- **Produced by Claude Code:**
+  - the data access proposal (D-004), comparing in-memory records, SQLite, pandas and SQLAlchemy;
+  - typed models, a loader that validates the CSVs and refuses broken data, the `StoreRepository` interface and its
+    `InMemoryStore`, the policy manual split into 29 sections, and the agent's "today" in store time;
+  - a profile of every CSV (`docs/DATA_NOTES.md`) and 36 tests;
+  - a review of every business rule against consumer law, data protection law and the Gemini terms (D-005).
+  A Claude Code session on the second machine wrote the first read of the manual and the orders; the laptop session
+  re-checked every number in it against the CSVs and the PDF.
+- **Reviewed or changed by Vinicius:**
+  - asked for a design that is simple now and can scale later, which shaped D-004's repository seam; he asked whether
+    it was really the best option before approving it;
+  - asked whether store time should be Brasília's; it stays UTC-4 (Campo Grande), checked against the time zone data;
+  - pointed out that the consumer code gives 7 days of regret from receipt, then asked for every proposal to be checked
+    against external rules. That review changed seven rules (installment display, contacts, warranty, regret, last
+    units, order lookup, catalog gaps) and added four (LGPD and the Gemini free tier, binding offers, virtual assistant
+    disclosure, complaint deadline).
+- **Caught by tests:** a test assumed the wrong price for product 81; it was corrected against the CSV.
