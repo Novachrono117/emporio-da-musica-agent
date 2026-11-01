@@ -77,3 +77,24 @@ Each decision with its context, the options considered, the choice and the reaso
 - **Note for phase 2:** Qwen wrote the price as "R$ 1234.56" (English decimal separator), while both Gemini models wrote
   "R$ 1.234,56". Tools should return a formatted BRL string next to the number, so the model does not have to format
   money.
+
+## D-004: Data access layer
+
+- **Status:** approved by Vinicius on 2026-11-01.
+- **Context:** the store data is small and static: 65 products, 9 categories, 50 customers, 20 orders, 22 order items
+  and 25 promotions, read by a single CLI process. The brief asks for the simplest solution; Vinicius also wants a
+  design that can grow later without a rewrite.
+- **Options:** (A) SQLite in memory with SQL inside the tools (the plan's first proposal); (B) in-memory Python objects
+  behind a small repository interface; (C) pandas DataFrames; (D) SQLAlchemy ORM over SQLite.
+- **Choice:** B. Frozen dataclasses (`data/models.py`) built from the cleaned CSVs (`data/loader.py`) and held by
+  `InMemoryStore` (`data/memory.py`), which implements `StoreRepository` (`data/repository.py`). Tools receive a
+  `StoreRepository` and only call its methods; they never read CSVs or raw collections. The interface grows one method
+  at a time, as each tool needs it.
+- **Why:** at this size a database adds code without any gain in speed or safety. Money stays in `Decimal` from the CSV
+  to the tool result (Pix discount, installments), where SQLite would need integer cents and conversions both ways.
+  Evolution comes from the seam: a `SqlStore` implementing the same interface (SQLite or Postgres) replaces
+  `InMemoryStore` without touching tools or agent, and the same contract tests run against both.
+- **When to switch to a database:** the data grows to thousands of rows, changes during a session, or is shared by
+  several processes.
+- **Rejected:** pandas (heavy dependency, no path to a database); SQLAlchemy (dependency and boilerplate for about 200
+  rows); a free-form SQL agent (unsafe with customer data, see `PLAN.md`, section 4).

@@ -60,7 +60,7 @@ using the store data (`data/*.csv`) and the internal policy manual (`data/polít
        |
   Tool registry (strict JSON schemas, validated inputs)
        |-- search_products / get_product_details   --+
-       |-- get_order_status (with verification)       +--> SQLite in memory, built from cleaned CSVs
+       |-- get_order_status (with verification)       +--> StoreRepository (in memory today, D-004), from cleaned CSVs
        |-- quote_payment (Pix, installments, promos) --+
        |-- get_store_policy(topic)  ----------------> policy sections parsed from the PDF
        |-- register_complaint / handoff_to_human ---> local JSON ticket log
@@ -101,7 +101,10 @@ docs/
   COSTS.md                 generated: cost projection per model
 src/emporio/
   config.py                settings from environment (provider, model, paths, "today")
-  data/loader.py           CSV -> cleaned tables -> SQLite in memory
+  data/models.py           typed records (frozen dataclasses, money as Decimal)
+  data/repository.py       StoreRepository: the queries tools may use (D-004)
+  data/loader.py           CSV -> cleaned records
+  data/memory.py           InMemoryStore, today's StoreRepository
   data/policy.py           PDF -> numbered sections with titles
   tools/catalog.py         search_products, get_product_details
   tools/orders.py          get_order_status
