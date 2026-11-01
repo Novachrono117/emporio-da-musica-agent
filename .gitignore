@@ -16,3 +16,6 @@ __pycache__/
 
 # Local run artifacts
 *.log
+
+# Saved conversations hold customer data (D-005, rule 13)
+sessions/
