@@ -135,7 +135,8 @@ TOOLS = (
             "Price a purchase: cash price, Pix price, total for the chosen method and credit card installments, "
             "with the store's discount and installment rules applied, plus delivery cost in Campo Grande. Use it "
             "for every question about how much something costs to pay or in how many installments. List each "
-            "product and quantity; the tool adds them up."
+            "product and quantity; the tool adds them up. Product ids come from search_products or "
+            "get_product_details: never guess one."
         ),
         input_schema={
             "type": "object",
@@ -146,7 +147,7 @@ TOOLS = (
                     "items": {
                         "type": "object",
                         "properties": {
-                            "product_id": {"type": "integer", "description": "Product id from the catalog."},
+                            "product_id": {"type": "integer", "description": "Id returned by search_products."},
                             "quantity": {"type": "integer", "description": "Units, at least 1."},
                         },
                         "required": ["product_id", "quantity"],
