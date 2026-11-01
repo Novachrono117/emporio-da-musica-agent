@@ -209,3 +209,18 @@ Each decision with its context, the options considered, the choice and the reaso
   `check_return_options`, `get_store_policy`, `register_complaint`, `handoff_to_human`.
 - **Interpretation (rule 10):** products that are not for sale (coming soon, or discontinued with no stock) are shown
   without a price, so the agent cannot quote them.
+
+## D-007: Product descriptions that contradict the product
+
+- **Status:** approved by Vinicius on 2026-11-01.
+- **Context:** in seven products (135, 136, 137, 139, 140, 142 and 144) the description names another brand or model
+  than the product's name, and some contradict the specs too: 142 is a "Korg" whose description is an 88-key Roland
+  workstation, while its specs say 61 keys (`docs/DATA_NOTES.md` lists all seven). The agent would repeat whichever
+  text it read, and what it tells a customer binds the store (CDC, art. 30).
+- **Options:** (A) keep the descriptions and add a note telling the model to trust the name and the specs; (B) drop
+  those descriptions; (C) keep everything and list the conflict as a known limitation.
+- **Choice:** B. The loader drops the seven descriptions (`CONTRADICTORY_DESCRIPTIONS` in `data/loader.py`); the
+  tools show the name, category, price and specs, and the search no longer matches words that only those
+  descriptions held. The raw file is unchanged.
+- **Why:** a small local model can ignore a note but cannot repeat a text it never sees. The cost is losing the
+  descriptive text of seven products, which is the text that is wrong.

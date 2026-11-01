@@ -106,7 +106,8 @@ approved on 2026-11-01, several of them revised after a check against consumer l
   | 142 | Korg synthesizer | Roland workstation, 88 keys (specs: 61) |
   | 144 | Roland synthesizer | Yamaha arranger keyboard |
 
-  Products 138, 141 and 143 agree with their names.
+  Products 138, 141 and 143 agree with their names. The loader drops these seven descriptions, so the agent neither
+  shows nor searches them (`DECISIONS.md`, D-007).
 - Customers: names are unique; every phone follows `(NN) NNNNN-NNNN`; **two customers share one e-mail address**, so a
   customer is never identified by e-mail.
 - Orders: 4 `pending`, 4 `confirmed`, 1 `shipped`, 7 `delivered`, 4 `cancelled`. Only shipped and delivered orders
@@ -125,7 +126,8 @@ approved on 2026-11-01, several of them revised after a check against consumer l
   methods give 1).
 - `specs` is parsed into a read-only mapping.
 - Availability is derived from status and stock (D-005, rule 10).
-- Nothing is corrected: totals that differ from their items stay as recorded (D-005, rule 8).
+- The seven product descriptions that contradict their product are dropped (D-007); the raw file keeps them.
+- Nothing else is corrected: totals that differ from their items stay as recorded (D-005, rule 8).
 
 **Validation:** the loader raises `DataError` instead of loading half-clean data when it finds a duplicate ID, an
 unknown reference, an order without items, more than one active promotion for a product, an unknown status or payment

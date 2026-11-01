@@ -31,6 +31,9 @@ from emporio.data.models import (
 DATA_DIR = Path(__file__).resolve().parents[3] / "data"
 FILE_PREFIX = "desafio_tecnico_ai_eng - "
 CENT = Decimal("0.01")
+# Descriptions that name another brand or model than the product's name, some against the specs too. They are dropped
+# so the agent never repeats them; the name and the specs stay (docs/DATA_NOTES.md; DECISIONS.md, D-007).
+CONTRADICTORY_DESCRIPTIONS = frozenset({135, 136, 137, 139, 140, 142, 144})
 
 
 class DataError(ValueError):
@@ -78,11 +81,13 @@ def _product(row: dict[str, str]) -> Product:
         specs = json.loads(row["specs"]) if row["specs"] else {}
     except json.JSONDecodeError as error:
         raise DataError(f"product {row['product_id']}: specs is not valid JSON ({error})") from error
+    product_id = _int(row, "product_id")
+    description = _text(row, "description")  # still required: an empty one is a broken file
     return Product(
-        id=_int(row, "product_id"),
+        id=product_id,
         name=_text(row, "name"),
         category_id=_int(row, "category_id"),
-        description=_text(row, "description"),
+        description="" if product_id in CONTRADICTORY_DESCRIPTIONS else description,
         price=_money(row, "price_brl"),
         stock=_int(row, "stock_quantity", minimum=0),
         status=_enum(ProductStatus, row, "status"),

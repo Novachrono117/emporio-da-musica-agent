@@ -112,6 +112,15 @@ def test_details_carry_description_specs_and_stock(ctx):
     assert product["description"].startswith("Violão clássico")
 
 
+def test_contradictory_descriptions_are_neither_shown_nor_searched(ctx):
+    # 142 is a "Korg" whose raw description describes an 88-key Roland; 135 a "Music Man" described as a Fender.
+    product = get_product_details(ctx, product_id=142)["product"]
+    assert "description" not in product
+    assert product["specs"]["keys"] == "61"
+    assert _ids(search_products(ctx, query="Fender")) == [134, 145]
+    assert _ids(search_products(ctx, query="Roland")) == [144]
+
+
 def test_ambiguous_name_returns_candidates_instead_of_guessing(ctx):
     result = get_product_details(ctx, name="Kala")
     assert result["match"] == "ambiguous"

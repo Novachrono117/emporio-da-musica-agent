@@ -142,7 +142,8 @@ def _summary(ctx: ToolContext, product: Product) -> Result:
 
 def _details(ctx: ToolContext, product: Product) -> Result:
     details = _summary(ctx, product)
-    details["description"] = product.description
+    if product.description:  # empty when the loader dropped a contradictory one
+        details["description"] = product.description
     details["specs"] = dict(product.specs)
     if product.availability in FOR_SALE:
         details["stock"] = product.stock

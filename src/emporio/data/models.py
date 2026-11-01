@@ -50,7 +50,7 @@ class Product:
     id: int
     name: str
     category_id: int
-    description: str
+    description: str  # empty when dropped as contradictory (see docs/DATA_NOTES.md)
     price: Decimal
     stock: int
     status: ProductStatus

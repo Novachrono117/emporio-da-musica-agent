@@ -93,6 +93,16 @@ def test_availability_combines_status_and_stock(data):
     assert products[130].availability is Availability.COMING_SOON  # coming soon, stock 2
 
 
+def test_contradictory_descriptions_are_dropped_and_the_rest_kept(data):
+    products = {p.id: p for p in data.products}
+    with open(DATA_DIR / f"{FILE_PREFIX}products.csv", encoding="utf-8", newline="") as file:
+        raw = {int(row["product_id"]): row["description"] for row in csv.DictReader(file)}
+    dropped = [135, 136, 137, 139, 140, 142, 144]
+    assert all(products[i].description == "" and raw[i] for i in dropped)  # the raw file keeps them
+    assert "Fender Jazz Bass" in raw[135] and "Music Man" in products[135].name
+    assert all(products[i].description == raw[i] for i in products if i not in dropped)
+
+
 def test_three_categories_have_no_products(data):
     used = {p.category_id for p in data.products}
     assert sorted(c.id for c in data.categories if c.id not in used) == [6, 7, 8]
