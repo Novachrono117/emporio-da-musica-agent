@@ -162,3 +162,22 @@ trailer.
   runs, every expected tool, 98% of the facts, no leak and no invented amount) and is the default by rule 4, which the
   README must say. Qwen 3.5 9B reached 64% and the 4B 62%, both with Markdown in about a quarter of the runs; Qwen 2.5
   7B 44%; Gemini 3.8 Flash is partial (HTTP 503, 30 to 230 s per call). Without options the CLI now uses Flash-Lite.
+
+## Phase 6: examples and costs
+
+- **Asked:** 3 to 5 example conversations, at least one non-trivial, and a cost projection from measured tokens with
+  dated prices.
+- **Produced by Claude Code:**
+  - the plan (D-011), approved before any work;
+  - five example conversations in `examples/`, each from a single run of the default model with the final code,
+    written with their tool calls and results by `scripts/run_examples.py`, and an index that says what went wrong
+    in them (a hand-off with the wrong reason; a regret request recorded one message early);
+  - `scripts/cost_report.py` and `scripts/pricing.yaml`, with prices read from the official pages, the PTAX rate
+    from the Banco Central API and a GPU machine from Azure's retail prices API, and the generated `docs/COSTS.md`.
+- **Found while building:** Gemini's OpenAI-compatible endpoint leaves thinking out of `completion_tokens`. Two
+  calls showed it, the adapter now counts thinking as output, and 8 calls of the agent showed no thinking at the
+  default level, so the evaluation's tokens stand (D-011).
+- **Reviewed or changed by Vinicius:** approved D-011, including keeping wrong answers in the examples with a note.
+- **Result:** at 100 conversations a day the default model costs about US$ 7.44 (R$ 40,34) a month; Claude Haiku
+  5.5, projected, US$ 2.57, or US$ 1.65 with prompt caching; a rented T4 machine costs US$ 652.62 a month and pays
+  for itself only above about 8,770 conversations a day.
