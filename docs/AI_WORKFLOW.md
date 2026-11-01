@@ -20,5 +20,8 @@ trailer.
     docs for the Gemini OpenAI-compatible endpoint and free-tier models;
   - results in `docs/DECISIONS.md` (D-003).
 - **Findings that changed the plan:** the CSVs have no BOM (the plan assumed one); the local Ollama tag is
-  `qwen2.5:7b-instruct-q4_K_M`, not `qwen2.5:7b`.
+  `qwen2.5:7b-instruct-q4_K_M`, not `qwen2.5:7b`; the Gemini free tier accepts tool calling, but `gemini-3.8-flash`
+  was slow and then returned 503, while `gemini-3.5-flash-lite` answered in about 1 s.
+- **Done by Vinicius:** approved creating the private GitHub repository; created the `.env` keys himself (they never
+  went through the chat). Claude was not tested because there is no API credit available at the moment.
 - **Reviewed or changed by Vinicius:** pending.

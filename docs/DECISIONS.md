@@ -43,8 +43,19 @@ Each decision with its context, the options considered, the choice and the reaso
 | Provider | Model | Tool call | Final answer | Latency (call 1, call 2) | Tokens in / out |
 |---|---|---|---|---|---|
 | Ollama | `qwen2.5:7b-instruct-q4_K_M` | PASS | PASS | 2.86 s, 0.45 s (15.8 s on a cold start) | 479 / 50 |
-| Claude | `claude-haiku-5-5` | pending (`.env` not created yet) | | | |
-| Gemini | `gemini-3.8-flash` | pending (`.env` not created yet) | | | |
+| Gemini (free tier) | `gemini-3.8-flash`, run 1 | PASS | PASS | 32.47 s, 102.35 s | 454 / 75 |
+| Gemini (free tier) | `gemini-3.8-flash`, run 2 | FAIL: HTTP 503 after the SDK's 2 retries | | | |
+| Gemini (free tier) | `gemini-3.5-flash-lite` | PASS | PASS | 1.20 s, 0.68 s (no retries) | 311 / 48 |
+| Claude | `claude-haiku-5-5` | not run: no Anthropic API credit available on 2026-10-31 | | | |
 
-- **Note for phase 2:** Qwen wrote the price as "R$ 1234.56" (English decimal separator). Tools should return a
-  formatted BRL string next to the number, so the model does not have to format money.
+- **Answer to the key question:** the Gemini free tier accepts tool calling through the OpenAI-compatible endpoint,
+  including the second request that sends the tool result back (the assistant message is returned as received, which
+  keeps any thought signature).
+- **Gemini model, proposal awaiting approval:** use `gemini-3.5-flash-lite` as the Gemini candidate. `gemini-3.8-flash`
+  worked once, but with 32 s and 102 s per call, and then failed with 503; on the free tier it looks overloaded tonight
+  (two runs only, so this is an observation, not a measurement). Flash-Lite answered in about 1 s without retries.
+- **Claude:** `python scripts/smoke_test.py claude` is ready to run once there is credit. Until then Claude stays out of
+  the quality comparison and appears in the cost projection only (plan, section 9).
+- **Note for phase 2:** Qwen wrote the price as "R$ 1234.56" (English decimal separator), while both Gemini models wrote
+  "R$ 1.234,56". Tools should return a formatted BRL string next to the number, so the model does not have to format
+  money.
