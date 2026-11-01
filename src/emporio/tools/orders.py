@@ -21,8 +21,8 @@ LOCKED = (
 )
 OPEN_STATUSES = (OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.SHIPPED)
 LATE_DELIVERY_NOTE = (
-    "The estimated delivery date has passed. Apologise and offer a person from the team (handoff_to_human); do not "
-    "send the customer to the carrier."
+    "The estimated delivery date has passed. Apologise and offer a person from the team (handoff_to_human, reason "
+    "customer_request); do not send the customer to the carrier."
 )
 
 
@@ -35,6 +35,11 @@ def get_order_status(ctx: ToolContext, order_id: int, phone_last4: str) -> Resul
     order = ctx.store.get_order(order_id)
     customer = ctx.store.get_customer(order.customer_id) if order else None
     if order is None or customer is None or not hmac.compare_digest(customer.phone_last4, phone_last4):
+        if ctx.last_failed_lookup == (order_id, phone_last4):
+            # The model repeating the same call is not a new attempt by the customer (seen with Gemini Flash-Lite).
+            return {"verified": False, "attempts_left": MAX_FAILED_LOOKUPS - ctx.failed_order_lookups,
+                    "message": NOT_VERIFIED}
+        ctx.last_failed_lookup = (order_id, phone_last4)
         ctx.failed_order_lookups += 1
         attempts_left = MAX_FAILED_LOOKUPS - ctx.failed_order_lookups
         if attempts_left == 0:

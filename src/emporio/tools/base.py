@@ -44,6 +44,7 @@ class ToolContext:
     now: Callable[[], datetime] = agent_now  # store time (D-005, rule 7)
     failed_order_lookups: int = 0  # session state for get_order_status (D-005, rule 11)
     seen_products: set[int] = field(default_factory=set)  # ids the catalog tools returned; quotes need one (D-008)
+    last_failed_lookup: tuple[int, str] | None = None  # a repeated identical lookup is not a new attempt
 
     def today(self) -> date:
         return self.now().date()

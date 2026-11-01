@@ -53,12 +53,20 @@ def test_wrong_phone_and_unknown_order_look_the_same(ctx):
 
 
 def test_three_failures_lock_the_lookup_for_the_session(ctx):
-    for _ in range(2):
-        get_order_status(ctx, 8, "0000")
-    third = get_order_status(ctx, 8, "1111")
+    get_order_status(ctx, 8, "0000")
+    get_order_status(ctx, 8, "1111")
+    third = get_order_status(ctx, 8, "2222")
     assert third["locked"] is True and "handoff_to_human" in third["message"]
     # Even the right pair is refused now: the agent must hand off.
     assert get_order_status(ctx, 8, "7821") == third
+
+
+def test_the_model_repeating_a_lookup_is_not_a_new_attempt(ctx):
+    # Gemini Flash-Lite once sent the same wrong pair three times in one turn, locking the customer out.
+    for _ in range(3):
+        assert get_order_status(ctx, 3, "1111")["attempts_left"] == 2
+    assert get_order_status(ctx, 3, "2222")["attempts_left"] == 1
+    assert get_order_status(ctx, 3, "9012")["verified"] is True
 
 
 def test_malformed_phone_ending_is_an_input_error_not_an_attempt(ctx):
