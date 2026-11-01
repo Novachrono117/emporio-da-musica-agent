@@ -7,6 +7,7 @@ from conftest import MONDAY_10AM, ScriptedLLM, text, tools
 
 from emporio import cli
 from emporio.agent.memory import SessionError, SessionStore, new_session
+from emporio.agent.prompts import GREETING
 from emporio.agent.usage import UsageLog
 from emporio.llm.base import LLMError
 from emporio.tickets import TicketLog
@@ -83,11 +84,14 @@ def test_cli_survives_a_provider_error(chat):
 
 
 def test_cli_resumes_a_session(chat):
-    _, _, sessions = chat(["oi"], ScriptedLLM(text("Olá!")))
+    _, first_out, sessions = chat(["oi"], ScriptedLLM(text("Olá!")))
+    assert f"Assistente: {GREETING}" in first_out
     [saved] = sessions.glob("*.json")
     llm = ScriptedLLM(text("Claro."))
     code, out, _ = chat(["e agora?"], llm, ("--session", saved.stem))
     assert code == 0 and "Assistente: Claro." in out
+    assert GREETING not in out  # greeted once, in the first session
+    # The greeting is printed, never sent to the model as history.
     assert [m["content"] for m in llm.calls[0]["messages"]] == ["oi", "Olá!", "e agora?"]
 
 

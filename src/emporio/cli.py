@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 
 from emporio.agent.loop import Agent
 from emporio.agent.memory import SessionError, SessionStore, new_session
+from emporio.agent.prompts import GREETING
 from emporio.agent.usage import UsageLog
 from emporio.config import STORE_TZ, agent_now
 from emporio.data.memory import InMemoryStore
@@ -73,6 +74,8 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"Empório da Música, assistente virtual ({provider} / {model})")
     print(f"Data da loja: {now:%d/%m/%Y} (EMPORIO_TODAY). Sessão {session.id}. Digite 'sair' para encerrar.")
+    if not session.messages:
+        print(f"\nAssistente: {GREETING}")  # fixed, outside the history (D-009)
     while True:
         try:
             text = input("\nVocê: ").strip()
