@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from emporio.tools import catalog, orders, payments
+from emporio.tools import catalog, orders, payments, policy_tools, returns, support
 from emporio.tools.base import Result, ToolContext, ToolError, validate_arguments
 
-TOOLS = (*catalog.TOOLS, *orders.TOOLS, *payments.TOOLS)
+TOOLS = (*catalog.TOOLS, *orders.TOOLS, *payments.TOOLS, *returns.TOOLS, *policy_tools.TOOLS, *support.TOOLS)
 _BY_NAME = {tool.name: tool for tool in TOOLS}
 
 

@@ -217,7 +217,7 @@ TOOLS = (
         input_schema={
             "type": "object",
             "properties": {
-                "query": {"type": "string", "description": "Words to look for, e.g. 'violão Yamaha' or 'Stratocaster'."},
+                "query": {"type": "string", "description": "Words to look for, e.g. 'violão Yamaha', 'Stratocaster'."},
                 "category": {
                     "type": "string",
                     "description": "Category name, e.g. 'Violões', 'Guitarras', 'Baixos', 'Ukuleles', 'Teclados'.",
@@ -226,7 +226,7 @@ TOOLS = (
                 "max_price": {"type": "number", "description": "Maximum final price in BRL, e.g. 1000."},
                 "in_stock_only": {
                     "type": "boolean",
-                    "description": "Default true. Set false to also see out-of-stock, discontinued and coming-soon items.",
+                    "description": "Default true. False also lists out-of-stock, discontinued and coming-soon items.",
                 },
                 "limit": {"type": "integer", "description": "How many products to return, 1 to 10. Default 5."},
             },
