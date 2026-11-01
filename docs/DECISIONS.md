@@ -76,7 +76,7 @@ Each decision with its context, the options considered, the choice and the reaso
   the quality comparison and appears in the cost projection only (plan, section 9).
 - **Note for phase 2:** Qwen wrote the price as "R$ 1234.56" (English decimal separator), while both Gemini models wrote
   "R$ 1.234,56". Tools should return a formatted BRL string next to the number, so the model does not have to format
-  money.
+  money. (Superseded by D-006, choice 5: formatted text only.)
 
 ## D-004: Data access layer
 
@@ -165,3 +165,47 @@ Each decision with its context, the options considered, the choice and the reaso
   [Gemini API terms](https://ai.google.dev/gemini-api/terms) (updated 2026-04-28);
   [PL 2338/2023](https://www.congressonacional.leg.br/web/atividade/materias/-/materia/157233).
   This is a careful reading of the texts, not legal advice.
+
+## D-006: Tool contracts
+
+- **Status:** approved by Vinicius on 2026-11-01.
+- **Context:** the plan's seven tools (`PLAN.md`, section 7) were written before D-005, which needs date arithmetic
+  (regret, defect exchange, warranty), a record of regret requests and contact data that resolves the manual's
+  conflicts. The project rule keeps all arithmetic in code, never in the model.
+- **Choices:**
+  1. **Schemas and validation:** each tool declares a hand-written JSON Schema that uses only what Claude's strict tool
+     use accepts: types, `enum`, `required` and `additionalProperties: false`. Strict mode rejects `minimum`, `maximum`
+     and `minLength`, so ranges and cross-field rules are checked in code. Invalid input comes back as a structured
+     error the model can read and correct. No new dependency. Rejected: pydantic (already installed with both SDKs),
+     whose generated schemas carry titles, `anyOf` with null and numeric bounds that would have to be stripped for
+     strict mode and are noisier for a small local model.
+  2. **`quote_payment` takes items** (`product_id` and quantity), not a free amount: the code adds up the cart and
+     applies promotions, the Pix discount and the installment rules, so the model can never quote an invented value.
+     For combined payment methods the quote only says whether they are allowed (above R$ 2,000); the split goes to a
+     person, because the manual does not say how the Pix discount applies to part of a payment. Shipping inside the
+     Campo Grande metro area (free above R$ 500, otherwise R$ 35, section 5.1) is computed in the quote; other cities
+     depend on data the store does not give us.
+  3. **New tool `check_return_options`** (reason, purchase channel, purchase date, receipt date): deadlines are computed
+     in code. It reports whether the request is within the deadline, the deadline, the days left, the conditions a
+     person must check and the next step. It never says "eligible": packaging, use and misuse are checked by a person,
+     and information given to a customer binds the store (CDC, art. 30). Days are counted excluding the first day and
+     including the last (Código Civil, art. 132): a product received on the 16th can be returned until the 23rd. The
+     7 days of the preference exchange (4.3) count from receipt, which for an in-store purchase is the purchase day
+     (the manual does not say).
+  4. **`handoff_to_human` records a ticket.** Its reason comes from a fixed list (customer request, regret request,
+     warranty claim, policy question, failed order verification, other), which records regret requests (D-005, rule 5)
+     without another tool. The result carries the contacts, whether the store is open now and when it opens next
+     (7.1). Tickets and complaints go to `tickets/tickets.jsonl`, kept out of git because they hold customer data.
+  5. **Money only as formatted text** (`"R$ 1.234,56"`) and dates as `dd/mm/yyyy`. All arithmetic happens before, in
+     `Decimal`. This replaces the phase 0 note in D-003 (number and text side by side): with text only, the model has
+     nothing to reformat or recompute.
+  6. **`get_store_policy`** returns the manual sections of a topic plus notes where D-005 resolves a conflict (for
+     example, the section 3 table against 3.1, or 4.2 sending the customer to the manufacturer). Contact data comes
+     from D-005, not from the manual's text. Text the model reads never cites this log, only manual sections and the
+     law, which the agent may quote to a customer.
+  7. **Failed order lookups** are counted per session in code; at the third failure the tool stops checking and tells
+     the agent to hand off. Known limitation, for the README: a new session starts the count again.
+- **Tools (eight):** `search_products`, `get_product_details`, `get_order_status`, `quote_payment`,
+  `check_return_options`, `get_store_policy`, `register_complaint`, `handoff_to_human`.
+- **Interpretation (rule 10):** products that are not for sale (coming soon, or discontinued with no stock) are shown
+  without a price, so the agent cannot quote them.

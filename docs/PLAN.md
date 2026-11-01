@@ -58,12 +58,13 @@ using the store data (`data/*.csv`) and the internal policy manual (`data/polít
        |        |-- AnthropicClient   (Claude, official SDK)
        |        |-- OpenAICompatClient (Gemini OpenAI-compatible endpoint, Ollama /v1)
        |
-  Tool registry (strict JSON schemas, validated inputs)
+  Tool registry (strict JSON schemas, validated inputs, D-006)
        |-- search_products / get_product_details   --+
        |-- get_order_status (with verification)       +--> StoreRepository (in memory today, D-004), from cleaned CSVs
        |-- quote_payment (Pix, installments, promos) --+
+       |-- check_return_options (deadlines in code)
        |-- get_store_policy(topic)  ----------------> policy sections parsed from the PDF
-       |-- register_complaint / handoff_to_human ---> local JSON ticket log
+       |-- register_complaint / handoff_to_human ---> local JSONL ticket log
        |
   Session store (JSON per session)     Usage log (JSONL: tokens, latency, model, tool calls)
 ```
@@ -101,17 +102,20 @@ docs/
   COSTS.md                 generated: cost projection per model
 src/emporio/
   config.py                settings from environment (provider, model, paths, "today")
+  company.py               company data, contacts and business hours (D-005, rule 3)
   data/models.py           typed records (frozen dataclasses, money as Decimal)
   data/repository.py       StoreRepository: the queries tools may use (D-004)
   data/loader.py           CSV -> cleaned records
   data/memory.py           InMemoryStore, today's StoreRepository
   data/policy.py           PDF -> numbered sections with titles
+  tools/base.py            tool context, schema validation, money and date formatting
   tools/catalog.py         search_products, get_product_details
   tools/orders.py          get_order_status
   tools/payments.py        quote_payment (Pix discount, installment rules, promotions)
+  tools/returns.py         check_return_options
   tools/policy_tools.py    get_store_policy
   tools/support.py         register_complaint, handoff_to_human
-  tools/registry.py        schemas, validation, dispatch
+  tools/registry.py        tool list, definitions, dispatch
   llm/base.py              interface and shared types (messages, tool calls, usage)
   llm/anthropic_client.py
   llm/openai_compat_client.py
@@ -151,20 +155,22 @@ Checks to run and document:
 ## 7. Tools (phase 2): contracts
 
 Every tool has a strict JSON schema, validates its input, is deterministic, returns structured JSON (never prose), and has
-unit tests. Errors come back as structured errors the model can explain.
+unit tests. Errors come back as structured errors the model can explain. Money comes back as formatted text
+("R$ 1.234,56") and dates as dd/mm/yyyy, after all arithmetic is done in code (D-006).
 
 | Tool | Input | Output | Rules |
 |---|---|---|---|
 | `search_products` | `query?`, `category?`, `min_price?`, `max_price?`, `in_stock_only` (default true), `limit` (default 5) | list of products: id, name, category, list price, active promotion, final price, availability | price filter on the final price; out-of-stock items only when asked, so the agent can suggest alternatives (policy 7.3) |
 | `get_product_details` | `product_id?` or `name?` | full product with specs, availability, promotion | name match is fuzzy; if ambiguous, return candidates instead of guessing |
 | `get_order_status` | `order_id`, `phone_last4` (last 4 digits of the customer's phone) | status, items, total, payment method, tracking code, estimated delivery | both must match, checked in code; same neutral message for every failure; hand off after 3 failed attempts; no phone or e-mail in the result (D-005, rule 11; LGPD) |
-| `quote_payment` | `product_id` or `amount`, `method` (pix, debit, credit, boleto), `installments?` | cash price, total, installment count and values, Pix price, rules applied, valid or invalid with reason | Pix 5% off, but not over promotional prices (6.2); credit up to 12x with minimum installments by tier (3.1); combined methods only above R$ 2,000; installments add up to the total exactly (D-005, rule 2) |
-| `get_store_policy` | `topic` (enum mapped to manual sections: hours, payment, returns, exchanges, shipping, promotions, warranty, privacy, contact) | section id, title and text | the answer cites the section |
-| `register_complaint` | `summary`, `contact?` | ticket id, promised response time (24 business hours, policy 7.3) | writes to a local JSON log |
-| `handoff_to_human` | `reason` | message with business hours and contact | used when the policy says "consult management", or the customer asks for a person |
+| `quote_payment` | `items` (`product_id` and `quantity`), `method` (pix, debit, credit, boleto), `installments?` | cash price, total, installment count and values, Pix price, metro shipping, rules applied, valid or invalid with reason | Pix 5% off, but not over promotional prices (6.2); credit up to 12x with minimum installments by tier (3.1); combined methods only above R$ 2,000, split by a person; installments add up to the total exactly (D-005, rule 2; D-006) |
+| `check_return_options` | `reason` (regret, defect, preference), `channel?`, `purchase_date?`, `received_date?` | per rule: whether it applies, within deadline or not, deadline, days left, conditions a person checks, next step | 4.1 outside the store only, 7 days from receipt; 4.2 30 days from purchase; 4.3 7 days; 8.1 90 days from receipt; a defect is never denied (D-005, rules 4 and 5; D-006) |
+| `get_store_policy` | `topic` (about, hours, payment, returns_exchanges, shipping, promotions, warranty, privacy, contact) | section ids, titles and text, notes where a rule resolves a conflict; hours also say whether the store is open now | the answer cites the section |
+| `register_complaint` | `summary`, `contact?` | ticket id, promised response time (24 business hours, policy 7.3) | writes to the local ticket log |
+| `handoff_to_human` | `reason` (fixed list, includes regret requests and warranty claims), `summary`, `contact?` | ticket id, contacts, business hours, open now, next opening | used when the policy says "consult management", for regret and warranty requests, or when the customer asks for a person |
 
-Shipping (policy 5): metro Campo Grande is free above R$ 500 and R$ 35 below; other cities depend on CEP, weight and size,
-which the data does not have. The agent explains this instead of inventing a value.
+Shipping (policy 5): metro Campo Grande is free above R$ 500 and R$ 35 below (computed in the quote); other cities
+depend on CEP, weight and size, which the data does not have. The agent explains this instead of inventing a value.
 
 ## 8. Agent design (phases 3 and 4)
 
@@ -239,7 +245,7 @@ cached) and latency per call to JSONL, and writes `docs/EVAL.md`.
 |---|---|---|---|---|
 | **0. Setup** | repo, `pyproject.toml`, `.env.example`, `CLAUDE.md`, this plan; smoke test of one tool call on each provider | both API keys answer a tool call; Ollama answers locally | laptop | Sat Oct 31 night |
 | **1. Data** | loader, cleaning, policy sections, `DATA_NOTES.md` | tests for loading and integrity pass | laptop | Sun Nov 1 morning |
-| **2. Tools** | the seven tools and their schemas | unit tests for every rule in section 7 | laptop | Sun Nov 1 afternoon |
+| **2. Tools** | the eight tools and their schemas (D-006) | unit tests for every rule in section 7 | laptop | Sun Nov 1 afternoon |
 | **3. Agent** | LLM interface, two adapters, loop, CLI | loop test with a fake LLM; a real conversation on the local model | laptop | Sun Nov 1 night |
 | **4. Behaviour** | persona, guardrails, out-of-scope, memory | manual run of the brief's four example questions | laptop | Mon Nov 2 morning |
 | **5. Evaluation** | golden set, runner, runs on all candidates | `docs/EVAL.md` with the table; default model chosen by the rule | desktop (local runs) and laptop (APIs) in parallel | Mon Nov 2 afternoon |
