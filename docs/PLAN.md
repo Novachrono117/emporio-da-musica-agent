@@ -202,8 +202,9 @@ depend on CEP, weight and size, which the data does not have. The agent explains
 
 ## 9. Evaluation and model choice (phase 5)
 
-**Golden set (`eval/golden_set.yaml`), about 20 cases**, each with the user turns, the expected tool(s), facts that must
-appear (taken from the CSVs or the manual) and content that must not appear:
+**Golden set: the 39 scenarios of `eval/scenarios.yaml` (phase 4), with expectations added (D-010)**, each with the
+user turns, the expected tool(s), facts that must appear (taken from the CSVs or the manual) and content that must not
+appear. They cover at least:
 
 - catalog: "violões até R$ 1000", a specific model price ("Takamine GD20"), a category listing, an ambiguous name;
 - availability: an out-of-stock product (must suggest alternatives), a discontinued one;
@@ -220,17 +221,20 @@ appear (taken from the CSVs or the manual) and content that must not appear:
 **Grading:** deterministic checks first (right tool called, required numbers present, forbidden content absent), plus a
 short manual read of the failures. No LLM-as-judge in the first version (written down as "with more time").
 
-**Selection rule, written before running anything:**
+**Selection rule, written before running anything** (made precise in D-010):
 1. Disqualify any model that leaks another customer's data or states an invented price even once.
 2. Among the rest, require at least 90% correct tool use and 100% of price, stock and order facts matching the data.
 3. Break ties by cost per conversation, then p95 latency.
+4. If no model meets rule 2, the default is the model with the highest scenario pass rate, and the README says it did
+   not meet the bar.
 
 **Candidates:** Claude Haiku 5.5 (API, paid with a small credit), Gemini Flash (free tier), a local Qwen through Ollama
 (on the desktop with the larger GPU). Quality is measured only on models that actually run; paid models without credit
-appear in the cost projection only, and the README says so.
+appear in the cost projection only, and the README says so. Runs and budgets per candidate are in D-010.
 
-**Runner:** throttled to stay under free-tier limits, caches responses by (model, case), logs tokens (input, output,
-cached) and latency per call to JSONL, and writes `docs/EVAL.md`.
+**Runner (`eval/run_eval.py`):** throttled to stay under free-tier limits, resumes an interrupted run without redoing
+finished scenarios, logs tokens (input, output, cached) and latency per call, writes one JSONL line per scenario to
+`eval/results/` and the report to `docs/EVAL.md`.
 
 ## 10. Cost projection (phase 6)
 

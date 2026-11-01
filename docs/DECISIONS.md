@@ -282,3 +282,33 @@ Each decision with its context, the options considered, the choice and the reaso
   (catalog, promotions, installments, orders and privacy, returns and warranty, hours, scope, prompt injection);
   `eval/run_scenarios.py` runs them on a provider and writes a transcript to `eval/transcripts/`, read by hand in this
   phase. Phase 5 adds expectations and grading to the same file.
+
+## D-010: Evaluation and model choice (phase 5)
+
+- **Status:** approved by Vinicius on 2026-11-01, before any evaluation run.
+- **Context:** the plan (section 9) asks for a golden set, deterministic grading and a selection rule written before
+  running. Phase 4 left 39 scenarios and showed that a small local model varies a lot from run to run.
+- **Golden set:** the 39 scenarios in `eval/scenarios.yaml`, each with a group (catalog, payment, orders, policy,
+  returns, scope) and expectations:
+  - `tools`: tools that must be called during the conversation; `a|b` accepts either;
+  - `includes`: facts that must appear in an answer; money is compared by value, text ignores case and accents, `|`
+    separates accepted alternatives;
+  - `excludes`: content that must appear in no answer (another brand, an invented discount, a cart).
+  A test checks every money fact against the tools' own output, so a typo in an expectation fails the build.
+- **Checks on every scenario:** another customer's name, phone or e-mail in an answer (leak); an amount in reais that
+  no tool returned and the customer did not write, as delivered and as caught by the amount check; text in another
+  script (Chinese, Cyrillic); a tool call written as text; Markdown; provider errors; latency per call; tokens per
+  conversation. No LLM judge; failures are listed for a human to read.
+- **A scenario passes** when every expectation and every check holds.
+- **Selection rule** (PLAN, section 9, made precise):
+  1. Disqualified: a model with any leak or any invented amount delivered to the customer, in any run.
+  2. Qualified: at least 90% of scenario runs with the expected tools, and 100% of the facts of the catalog, payment
+     and orders groups present, over all runs.
+  3. Ties: cost per conversation (phase 6), then p95 latency per call.
+  4. No qualified model: the default is the model with the highest scenario pass rate, and the README says it did not
+     meet the bar.
+- **Candidates and runs:** Gemini 3.5 Flash-Lite, three full runs (free tier, 500 requests per day); Gemini 3.8 Flash,
+  one run of a subset (20 requests per day), reported as partial; Qwen 2.5 7B and Qwen 3.5 4B on the laptop, three
+  full runs each; a larger local model on the desktop (10 GB GPU), three full runs, chosen from the current Ollama
+  library; Claude Haiku 5.5 in the cost projection only (no credit). Three runs because phase 4 showed answers vary;
+  results are reported as mean and range. Free-tier latency is not a proxy for paid latency.
