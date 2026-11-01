@@ -10,6 +10,7 @@ import argparse
 import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -17,7 +18,7 @@ from dotenv import load_dotenv
 from emporio.agent.loop import Agent
 from emporio.agent.memory import SessionError, SessionStore, new_session
 from emporio.agent.usage import UsageLog
-from emporio.config import agent_now
+from emporio.config import STORE_TZ, agent_now
 from emporio.data.memory import InMemoryStore
 from emporio.data.policy import load_policy_manual
 from emporio.llm import DEFAULT_MODELS, PROVIDERS, create_client, redact
@@ -65,7 +66,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     now = agent_now()
-    session = session or new_session(provider, model, now)
+    # Named by the real clock: the store date is simulated (D-005, rule 7), the conversation is not.
+    session = session or new_session(provider, model, datetime.now(STORE_TZ))
     ctx = ToolContext(InMemoryStore.from_csv(), load_policy_manual(), TicketLog())
     agent = Agent(llm, ctx, session, UsageLog(), on_tool=_print_tool if args.verbose else None)
 

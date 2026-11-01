@@ -66,7 +66,9 @@ def test_cli_chats_saves_and_shows_tools_when_verbose(chat):
     assert "Data da loja: 23/03/2026" in out
     assert "[tool] search_products" in out and "Assistente: Custa R$ 2.199,00." in out
     [saved] = sessions.glob("*.json")
-    assert json.loads(saved.read_text(encoding="utf-8"))["seen_products"] == [95]
+    data = json.loads(saved.read_text(encoding="utf-8"))
+    assert data["seen_products"] == [95]
+    assert not data["created_at"].startswith("2026-03-23")  # the real clock, not the simulated store date
     assert f"--session {saved.stem}" in out
 
 
