@@ -29,8 +29,9 @@ were extracted without changes. The case statement PDF from the same zip is not 
 
 ## First read of the manual and the orders (phase 0)
 
-Findings from reading the whole manual and a quick integrity check of the orders, before phase 1. Each "Proposed" line is
-a proposal until Vinicius approves it in phase 1.
+Findings from reading the whole manual and a quick integrity check of the orders, before phase 1. The proposals were
+approved on 2026-11-01, several of them revised after a check against consumer law: the rules in force are in
+`docs/DECISIONS.md`, D-005, which wins wherever it differs from a "Proposed" line below.
 
 **Policy manual (`políticas_da_loja.pdf`, 8 pages, version 2.1, June 2025)**
 
@@ -76,5 +77,53 @@ a proposal until Vinicius approves it in phase 1.
 
 ## Profiling and cleaning (phase 1)
 
-To be filled in phase 1: types, nulls, duplicates, ID ranges, referential integrity, `specs` JSON, availability rules,
-promotions, order status values, tracking codes, "today", and the contradictions inside the policy manual.
+`src/emporio/data/loader.py` applies every rule below, and `tests/test_loader.py` covers them.
+
+**What the files contain**
+
+- No empty value in a required column, no value with stray spaces, and unique IDs in every table. Product IDs run from
+  81 to 145; prices from R$ 159,90 to R$ 19.567,00, never with more than two decimals.
+- Referential integrity holds: every product has a known category, every order a known customer and at least one item,
+  every item a known order and product, every promotion a known product.
+- Categories 6, 7 and 8 (wind instruments and orchestral strings) have no products.
+- `specs` is valid JSON in all 65 products. Its keys depend on the instrument: `color` is everywhere; most string
+  instruments have `top`, `back_sides`, `neck`, `scale`, `strings` and `electronics`; drum kits have `shells`, `pieces`
+  and `hardware`.
+- Products: 62 `active`, 2 `discontinued`, 1 `coming_soon`. Product 96 is active with no stock, 113 is discontinued
+  with no stock, 136 is discontinued with 13 units, and 130 is coming soon with 2 units.
+- Customers: names are unique; every phone follows `(NN) NNNNN-NNNN`; **two customers share one e-mail address**, so a
+  customer is never identified by e-mail.
+- Orders: 4 `pending`, 4 `confirmed`, 1 `shipped`, 7 `delivered`, 4 `cancelled`. Only shipped and delivered orders
+  carry a tracking code and an estimated delivery date, and the 8 codes follow the manual's format (5.3: `BR`, 9
+  alphanumerics, `BR`). Only the cancelled orders have notes. Payment methods: `pix`, `debit`, `boleto`, `credit_3x`,
+  `credit_6x`, `credit_12x`.
+- Promotions: 25 rows, 4 active (products 127, 121, 90 and 94), never more than one active per product. Products 93, 96
+  and 99 have several promotions, none active.
+
+**Cleaning and parsing**
+
+- Files are read as UTF-8, tolerating a BOM, and every value is stripped.
+- Money becomes a `Decimal` with two places; IDs, stock and quantities become integers; dates become ISO dates.
+- Empty `tracking_code`, `estimated_delivery` and `notes` become `None`.
+- `payment_method` is split into a method and a number of installments (`credit_6x` gives credit and 6; the other
+  methods give 1).
+- `specs` is parsed into a read-only mapping.
+- Availability is derived from status and stock (D-005, rule 10).
+- Nothing is corrected: totals that differ from their items stay as recorded (D-005, rule 8).
+
+**Validation:** the loader raises `DataError` instead of loading half-clean data when it finds a duplicate ID, an
+unknown reference, an order without items, more than one active promotion for a product, an unknown status or payment
+method, invalid JSON, an amount that is not positive or has more than two decimals, or an empty required text. Error
+messages name the row by its ID only, never by customer data.
+
+**Policy manual** (`src/emporio/data/policy.py`, covered by `tests/test_policy.py`)
+
+- pypdf's layout mode keeps each heading at the start of its own line, so the manual is read line by line instead of
+  splitting a single stream of words. The repeated page header and the "Página N" footers are dropped, which joins
+  sections 5.2, 7.2 and 9 across their page breaks.
+- The result has 29 sections: the cover (`0`) and chapters 1 to 10 with their sub-sections. A heading counts only when
+  it follows the previous number, so numbers inside the text (for example "13.709/2018") never open a section.
+- Table columns are joined with ` | ` and bullets are normalised.
+- Contradictions stay exactly as written; D-005 decides how the agent handles them.
+
+**The agent's "today"** (`src/emporio/config.py`): D-005, rule 7.
